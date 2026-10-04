@@ -1,6 +1,7 @@
 import type { PromptTemplate } from './prompt';
 import { starterTemplates } from './templates';
 import { chatApps, type AppName } from './chat-apps';
+import { readT3Options } from './t3';
 
 export const WORKSPACE_KEY = 'promptroom.workspace';
 // Retained only to preserve previously saved data. Presets are no longer a feature.
@@ -38,7 +39,8 @@ export function readWorkspace(value: unknown): Workspace {
         (item.chatApp !== undefined && !validApp(item.chatApp))) throw new Error('Invalid template');
     const reusableVariables = item.reusableVariables as string[] | undefined;
     return { id: item.id, title: item.title, description: item.description, body: item.body,
-      ...(reusableVariables !== undefined ? { reusableVariables } : {}), ...(item.chatApp ? { chatApp: item.chatApp } : {}) };
+      ...(reusableVariables !== undefined ? { reusableVariables } : {}), ...(item.chatApp ? { chatApp: item.chatApp } : {}),
+      ...(item.t3Options !== undefined ? { t3Options: readT3Options(item.t3Options) } : {}) };
   });
   const ids = templates.map(item => item.id);
   if (new Set(ids).size !== ids.length || value.favorites.some(id => !ids.includes(id))) throw new Error('Invalid template references');

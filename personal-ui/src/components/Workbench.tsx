@@ -11,6 +11,7 @@ import { renderPrompt, type PromptTemplate } from '@/lib/prompt';
 import { newWorkspace, updateTemplate, WorkspaceStore, type Workspace } from '@/lib/workspace';
 import { chatApps, type AppName } from '@/lib/chat-apps';
 import { cn } from '@/lib/utils';
+import { t3Handoff, type T3Options } from '@/lib/t3';
 
 const variableLabel = (name: string) => name === 'text' ? 'Your text' : name.replace(/[_-]/g, ' ');
 
@@ -42,6 +43,15 @@ export default function Workbench() {
   const app = chatApps.find(item => item.name === appName) ?? chatApps[0];
   const draftVariables = renderPrompt(draft.body, {}).variables;
   const favorite = workspace.favorites.includes(template.id);
+  const t3Options = template.t3Options ?? {};
+  const handoff = app.name === 'T3 Chat' ? t3Handoff(rendered.text, t3Options) : null;
+  const directT3 = handoff?.direct ?? false;
+
+  function setT3Options(change: Partial<T3Options>) {
+    persist(updateTemplate(workspace, { ...template, t3Options: { ...t3Options, ...change } }));
+    setStatus('');
+    setManualCopy(false);
+  }
 
   useEffect(() => {
     setDark(document.documentElement.classList.contains('dark'));
@@ -126,6 +136,13 @@ export default function Workbench() {
 
   async function launchPrompt() {
     if (!checkRequired()) return;
+    if (handoff?.direct) {
+      window.open(handoff.url, '_blank', 'noopener,noreferrer');
+      // noopener can return null even when the tab opens; always offer a retry link.
+      setManualCopy(true);
+      setStatus('Opening T3 Chat with your prompt as the first message. If no tab opens, use the send link below.');
+      return;
+    }
     // Open during the user gesture, before awaiting clipboard permission.
     const destination = window.open('about:blank', '_blank');
     if (!destination) {
@@ -139,7 +156,7 @@ export default function Workbench() {
       await navigator.clipboard.writeText(rendered.text);
       destination.location.replace(app.url);
       setManualCopy(false);
-      setStatus(`Prompt copied. Paste it into ${app.name} to send.`);
+      setStatus(handoff ? 'Long prompt copied in full. Paste it into T3 Chat and set your model, search and profile there. URL options cannot be applied on this copy-and-paste path.' : `Prompt copied. Paste it into ${app.name} to send.`);
     } catch {
       destination.close();
       showManualCopy();
@@ -204,13 +221,28 @@ export default function Workbench() {
             </Select>
           </Field>
           <div className="launch-actions">
-            <Button disabled={busy} onClick={launchPrompt}>Open in {app.name}<ArrowUpRight data-icon="inline-end" /></Button>
+            <Button disabled={busy} onClick={launchPrompt}>{directT3 ? 'Send to T3 Chat' : `Open in ${app.name}`}<ArrowUpRight data-icon="inline-end" /></Button>
             <Button variant="outline" disabled={busy} onClick={copyPrompt}><Copy data-icon="inline-start" />Copy prompt</Button>
           </div>
-          <p className="launch-help">Copies your complete prompt, then opens a new chat. Paste to send.</p>
+          {app.name === 'T3 Chat' && <details key={template.id} className="t3-options">
+            <summary><span>T3 Chat options</span><span className="muted">Saved for this prompt</span></summary>
+            <div className="t3-options-body">
+              <p className="muted">Leave options blank to use T3 defaults. <a href="https://t3.chat/faq" target="_blank" rel="noopener noreferrer">URL documentation</a></p>
+              <div className="t3-options-grid">
+                <Field><FieldLabel htmlFor="t3-model">Model ID</FieldLabel><Input id="t3-model" value={t3Options.model ?? ''} placeholder="T3 default" onChange={event => setT3Options({ model: event.target.value })} /><FieldDescription>Use the model ID from T3 Settings → Models → Copy Search URL.</FieldDescription></Field>
+                <Field><FieldLabel htmlFor="t3-effort">Reasoning effort</FieldLabel><Input id="t3-effort" value={t3Options.effort ?? ''} placeholder="Model default" onChange={event => setT3Options({ effort: event.target.value })} /><FieldDescription>Use a value supported by your model. T3 falls back to its default for unsupported values.</FieldDescription></Field>
+                <Field><FieldLabel htmlFor="t3-search">Web search</FieldLabel><Select value={t3Options.search === undefined ? 'default' : String(t3Options.search)} onValueChange={value => setT3Options({ search: value === 'default' ? undefined : value === 'true' })}><SelectTrigger id="t3-search"><SelectValue /></SelectTrigger><SelectContent><SelectGroup><SelectItem value="default">T3 default</SelectItem><SelectItem value="true">On</SelectItem><SelectItem value="false">Off</SelectItem></SelectGroup></SelectContent></Select></Field>
+                <Field><FieldLabel htmlFor="t3-search-limit">Search limit</FieldLabel><Select disabled={t3Options.search === false} value={t3Options.search_limit === undefined ? 'default' : String(t3Options.search_limit)} onValueChange={value => setT3Options({ search_limit: value === 'default' ? undefined : Number(value) })}><SelectTrigger id="t3-search-limit"><SelectValue /></SelectTrigger><SelectContent><SelectGroup><SelectItem value="default">T3 default</SelectItem>{[1,2,3,4,5].map(limit => <SelectItem key={limit} value={String(limit)}>{limit} {limit === 1 ? 'query' : 'queries'}</SelectItem>)}</SelectGroup></SelectContent></Select><FieldDescription>Maximum search queries or tools, from 1 to 5.</FieldDescription></Field>
+                <Field><FieldLabel htmlFor="t3-profile">Profile</FieldLabel><Input id="t3-profile" value={t3Options.profile ?? ''} placeholder="T3 default" onChange={event => setT3Options({ profile: event.target.value })} /><FieldDescription>Profile name or ID.</FieldDescription></Field>
+                <Field><FieldLabel htmlFor="t3-temporary">Temporary chat</FieldLabel><Select value={t3Options.temporary === undefined ? 'default' : String(t3Options.temporary)} onValueChange={value => setT3Options({ temporary: value === 'default' ? undefined : value === 'true' })}><SelectTrigger id="t3-temporary"><SelectValue /></SelectTrigger><SelectContent><SelectGroup><SelectItem value="default">T3 default</SelectItem><SelectItem value="true">On</SelectItem><SelectItem value="false">Off</SelectItem></SelectGroup></SelectContent></Select><FieldDescription>On creates a chat that T3 does not persist.</FieldDescription></Field>
+              </div>
+              <Button variant="ghost" onClick={() => { persist(updateTemplate(workspace, { ...template, t3Options: undefined })); setStatus('T3 options reset to defaults.'); }}>Reset options</Button>
+            </div>
+          </details>}
+          <p className="launch-help">{directT3 ? 'Sends your complete prompt as the first message in a new T3 chat, with the options above.' : handoff ? 'This prompt is long. Copies it in full, then opens T3 Chat. Paste to send and choose your options there.' : 'Copies your complete prompt, then opens a new chat. Paste to send.'}</p>
           <p className="readiness" aria-live="polite">{rendered.missing.length ? `Still needed: ${rendered.missing.map(variableLabel).join(', ')}.` : 'Ready to copy or open.'}</p>
           <p role="status" className="action-status">{status}</p>
-          {manualCopy && <a className="manual-link" href={app.url} target="_blank" rel="noopener noreferrer">Open {app.name} manually<ArrowUpRight aria-hidden="true" /></a>}
+          {manualCopy && <a className="manual-link" href={directT3 ? handoff?.url : app.url} target="_blank" rel="noopener noreferrer">{directT3 ? 'Send to T3 Chat manually' : `Open ${app.name} manually`}<ArrowUpRight aria-hidden="true" /></a>}
         </div>
         <details ref={preview} className="preview">
           <summary><span>Preview complete prompt</span><Badge variant="secondary">{rendered.variables.length} {rendered.variables.length === 1 ? 'variable' : 'variables'}</Badge></summary>
