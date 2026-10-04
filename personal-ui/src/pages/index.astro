@@ -1,0 +1,21 @@
+---
+import '@fontsource-variable/geist';
+import '../styles/global.css';
+import Workbench from '../components/Workbench';
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Fill a reusable prompt, preview it, and open your chat app." />
+    <title>Promptroom · Personal workbench</title>
+    <script is:inline>
+      document.documentElement.classList.toggle('dark', window.matchMedia('(prefers-color-scheme: dark)').matches);
+    </script>
+  </head>
+  <body>
+    <Workbench client:load />
+    <noscript>This workbench needs JavaScript to fill and edit prompts.</noscript>
+  </body>
+</html>
