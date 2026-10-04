@@ -1,0 +1,106 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    background:
+      radial-gradient(circle at 12% 0%, rgba(103, 80, 164, 0.14), transparent 30%),
+      radial-gradient(circle at 88% 14%, rgba(125, 82, 96, 0.12), transparent 26%),
+      linear-gradient(180deg, #f7f3fb 0%, #f1ecf6 100%);
+    color-scheme: light dark;
+  }
+
+  html.dark {
+    background:
+      radial-gradient(circle at 12% 0%, rgba(129, 140, 248, 0.14), transparent 30%),
+      radial-gradient(circle at 86% 12%, rgba(251, 191, 36, 0.06), transparent 22%),
+      linear-gradient(180deg, #0f172a 0%, #111827 100%);
+    color-scheme: dark;
+  }
+
+  body {
+    min-height: 100vh;
+    background: transparent;
+  }
+
+  :where(button, a, input, textarea, select, summary) {
+    touch-action: manipulation;
+  }
+
+  :where(button, a, input, textarea, select, summary):focus-visible {
+    outline: 2px solid #6750a4;
+    outline-offset: 2px;
+  }
+
+  :where(button, a, input, textarea, select, summary):focus:not(:focus-visible) {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  summary {
+    list-style: none;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+}
+
+/* Material 3 Motion - Toast/Snackbar Animation */
+#toast {
+  transition:
+    opacity 200ms cubic-bezier(0.2, 0, 0, 1),
+    transform 200ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Material 3 Motion - Emphasized Decelerate for page entry */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 400ms cubic-bezier(0.05, 0.7, 0.1, 1);
+}
+
+/* Custom textarea resizer for better mobile touch targets */
+textarea::-webkit-resizer {
+  background-color: transparent;
+  /* Use a noticeable chevron/handle icon */
+  background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 14L14 10M6 14L14 6' stroke='%2379747E' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: bottom right;
+  /* Make the touch area significantly larger than typical default */
+  min-width: 32px;
+  min-height: 32px;
+}
+
+/* For dark mode */
+.dark textarea::-webkit-resizer {
+  background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 14L14 10M6 14L14 6' stroke='%23CAC4D0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+@media (max-width: 639px) {
+  #fabButton {
+    display: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-in {
+    animation: none;
+  }
+
+  #toast {
+    transition: none;
+  }
+}
+

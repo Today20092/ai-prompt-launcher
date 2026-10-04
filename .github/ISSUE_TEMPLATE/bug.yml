@@ -1,0 +1,11 @@
+name: Report a bug
+description: Report a broken launcher or site behavior
+labels: [needs-triage]
+body:
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Include the provider, browser, expected result, and actual result. Use non-sensitive example prompts.
+    validations:
+      required: true

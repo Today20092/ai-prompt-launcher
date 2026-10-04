@@ -1,0 +1,23 @@
+{
+  "name": "prompt-launcher",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "npx -y tailwindcss@3.4.17 -i ./src-css/tailwind.css -o ./style.css --watch",
+    "build": "npx -y tailwindcss@3.4.17 -i ./src-css/tailwind.css -o ./style.css -m"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "type": "commonjs",
+  "devDependencies": {
+    "autoprefixer": "^10.4.27",
+    "npm-run-all": "^4.1.5",
+    "postcss": "^8.5.8",
+    "tailwindcss": "^4.2.1"
+  },
+  "packageManager": "pnpm@11.21.0"
+}
+

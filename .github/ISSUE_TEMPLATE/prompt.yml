@@ -1,0 +1,42 @@
+name: Submit a prompt
+description: Propose a prompt for the community library
+title: "Prompt: "
+labels: [needs-triage]
+body:
+  - type: input
+    id: title
+    attributes:
+      label: Prompt title
+    validations:
+      required: true
+  - type: textarea
+    id: purpose
+    attributes:
+      label: What does this prompt help someone do?
+    validations:
+      required: true
+  - type: textarea
+    id: prompt
+    attributes:
+      label: Prompt body
+      description: Use example data only. Public issues are visible to everyone.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: variables
+    attributes:
+      label: Variables and example presets
+      description: Describe each placeholder, useful defaults, and example values.
+  - type: textarea
+    id: attribution
+    attributes:
+      label: Source and attribution
+      description: Link to an original source if applicable.
+  - type: checkboxes
+    id: permission
+    attributes:
+      label: Contribution permission
+      options:
+        - label: I wrote this prompt or have permission to contribute it under the MIT license, and it contains no secrets or personal data.
+          required: true

@@ -1,0 +1,11 @@
+name: Suggest a feature
+description: Suggest an improvement or new provider
+labels: [needs-triage]
+body:
+  - type: textarea
+    id: request
+    attributes:
+      label: What would you like to do?
+      description: Explain the use case and a concrete example.
+    validations:
+      required: true
