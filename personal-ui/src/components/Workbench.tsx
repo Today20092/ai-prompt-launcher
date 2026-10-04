@@ -194,8 +194,8 @@ export default function Workbench() {
           </Field>
         </div>
         <div className="workspace-heading">
-          <div><h1 id="prompt-title">{template.title}</h1>{template.description && <p className="muted">{template.description}</p>}</div>
-          <div className="header-actions">
+          <div className="workspace-heading-text"><h1 id="prompt-title">{template.title}</h1>{template.description && <p className="muted">{template.description}</p>}</div>
+          <div className="prompt-actions">
             <Button variant="ghost" size="icon" aria-label={favorite ? 'Remove favorite' : 'Add favorite'} aria-pressed={favorite} onClick={() => persist({ ...workspace, favorites: favorite ? workspace.favorites.filter(id => id !== template.id) : [...workspace.favorites, template.id] })}><Star fill={favorite ? 'currentColor' : 'none'} /></Button>
             <Button variant="ghost" size="icon" aria-label="Edit template" onClick={event => openEditor(event)}><Pencil /></Button>
           </div>
