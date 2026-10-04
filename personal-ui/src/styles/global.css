@@ -113,16 +113,7 @@
 .editor-note { margin-top: .75rem; text-align: right; font-size: .75rem; }
 .mobile-picker, .mobile-session-note { display: none; }
 .favorite-icon { display: inline; width: 1rem; height: 1rem; margin-right: .35rem; fill: currentColor; }
-.preset-panel { margin-top: 1.25rem; border-top: 1px solid var(--border); padding-top: 1rem; }
-.preset-panel summary { font-size: .875rem; font-weight: 600; }
-.preset-panel > p, .storage-note, .storage-status { font-size: .8rem; line-height: 1.6; margin: .75rem 0; }
-.preset-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; padding: .75rem 0; border-bottom: 1px solid var(--border); overflow-wrap: anywhere; }
-.preset-row > span { min-width: 0; }
-.preset-actions { display: flex; flex-wrap: wrap; gap: .35rem; }
-.reusable-fields { margin-top: 1rem; font-size: .875rem; }
-.reusable-fields legend { font-weight: 600; }
-.reusable-fields p { margin: .5rem 0; font-size: .8rem; line-height: 1.5; }
-.reusable-fields label { display: flex; align-items: center; gap: .5rem; padding: .5rem 0; }
+.storage-note, .storage-status { font-size: .8rem; line-height: 1.6; margin: .75rem 0; }
 .storage-status { border: 1px solid var(--destructive); padding: .75rem; border-radius: .5rem; overflow-wrap: anywhere; }
 .storage-status button { margin-top: .5rem; }
 @media (max-width: 760px) {

@@ -1,4 +1,6 @@
-export type PromptTemplate = { id: string; title: string; description: string; body: string; reusableVariables?: string[] };
+import type { AppName } from './chat-apps';
+
+export type PromptTemplate = { id: string; title: string; description: string; body: string; chatApp?: AppName; reusableVariables?: string[] };
 
 // Names start with a letter or underscore, followed by letters, digits, underscores or hyphens.
 // Whitespace around the name is allowed. Values are inserted once, without interpreting their content.
