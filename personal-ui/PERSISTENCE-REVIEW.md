@@ -8,6 +8,8 @@ Validation for this change: Astro check passes with zero diagnostics, the existi
 
 Independent reviews of this scope change found zero Standards findings and zero Spec findings.
 
+The maintainer then requested a configurable preferred app, starting with T3 Chat. Preferences in the header now changes the browser-local default. A prompt can follow the preference through "Use preferred" or keep an explicit app override. Browser verification confirmed the preference survives reload, following prompts update, and explicit overrides remain unchanged. The preview preference was restored to T3 Chat. The mobile header wraps on narrow screens to accommodate the Preferences control. Astro check, the existing four tests and the build passed.
+
 The sections below record the earlier preset implementation and review, before that scope change.
 
 Working branch: `codex/personal-mobile-workbench`, selected by the maintainer to continue on the branch containing issue #4. Fixed point: `9adbcb0cb19ea468d6ed30423ba8ee9cf60c85b3`. Issue #4 is complete on this branch; its implementation and validation are recorded in REVIEW.md.

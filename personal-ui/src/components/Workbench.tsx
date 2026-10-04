@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react';
-import { ArrowUpRight, Copy, Moon, Pencil, Plus, Sparkles, Star, Sun } from 'lucide-react';
+import { ArrowUpRight, Copy, Moon, Pencil, Plus, Settings2, Sparkles, Star, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -27,6 +27,7 @@ export default function Workbench() {
   const [busy, setBusy] = useState(false);
   const [manualCopy, setManualCopy] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [preferencesOpen, setPreferencesOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [draft, setDraft] = useState({ title: '', description: '', body: '' });
   const [saveAttempted, setSaveAttempted] = useState(false);
@@ -150,6 +151,7 @@ export default function Workbench() {
     <header className="app-header">
       <a href="#workspace" className="brand"><Sparkles aria-hidden="true" />Promptroom</a>
       <div className="header-actions">
+        <Button variant="ghost" size="icon" disabled={!ready} aria-label="Preferences" onClick={event => { opener.current = event.currentTarget; setPreferencesOpen(true); }}><Settings2 /></Button>
         <Button variant="ghost" size="icon" aria-label={dark ? 'Use light theme' : 'Use dark theme'} onClick={toggleTheme}>{dark ? <Sun /> : <Moon />}</Button>
         <Button variant="outline" disabled={!ready} onClick={event => openEditor(event, true)}><Plus data-icon="inline-start" />New prompt</Button>
       </div>
@@ -197,8 +199,8 @@ export default function Workbench() {
         <div className="entry-meta"><span>{rendered.variables.length ? 'Multiline text is welcome.' : 'This template has no variables. It is ready to use.'}</span><span>{rendered.text.length.toLocaleString()} characters in prompt</span></div>
         <div className="launch-panel">
           <Field className="app-picker"><FieldLabel htmlFor="chat-app">Chat app</FieldLabel>
-              <Select value={appName} onValueChange={name => { persist(updateTemplate(workspace, { ...template, chatApp: name as AppName })); setStatus(''); setManualCopy(false); }}><SelectTrigger id="chat-app"><SelectValue /></SelectTrigger>
-              <SelectContent><SelectGroup>{chatApps.map(item => <SelectItem key={item.name} value={item.name}>{item.name}</SelectItem>)}</SelectGroup></SelectContent>
+              <Select value={template.chatApp ?? 'preferred'} onValueChange={name => { persist(updateTemplate(workspace, { ...template, chatApp: name === 'preferred' ? undefined : name as AppName })); setStatus(''); setManualCopy(false); }}><SelectTrigger id="chat-app"><SelectValue /></SelectTrigger>
+              <SelectContent><SelectGroup><SelectItem value="preferred">Use preferred ({workspace.preferredApp})</SelectItem>{chatApps.map(item => <SelectItem key={item.name} value={item.name}>{item.name}</SelectItem>)}</SelectGroup></SelectContent>
             </Select>
           </Field>
           <div className="launch-actions">
@@ -243,6 +245,18 @@ export default function Workbench() {
           <DialogFooter className="editor-footer"><Button type="button" variant="outline" onClick={() => setEditing(false)}>Cancel</Button><Button type="submit">Save template</Button></DialogFooter>
           <p className="editor-note">Template changes are saved in this browser.</p>
         </form>
+      </DialogContent>
+    </Dialog>
+    <Dialog open={preferencesOpen} onOpenChange={setPreferencesOpen}>
+      <DialogContent onCloseAutoFocus={event => { event.preventDefault(); opener.current?.focus(); }}>
+        <DialogHeader><DialogTitle>Preferences</DialogTitle><DialogDescription>Your preferred app is used for prompts without their own app choice. Saved in this browser.</DialogDescription></DialogHeader>
+        <Field><FieldLabel htmlFor="preferred-app">Preferred chat app</FieldLabel>
+          <Select value={workspace.preferredApp} onValueChange={name => { persist({ ...workspace, preferredApp: name as AppName }); setStatus(''); setManualCopy(false); }}><SelectTrigger id="preferred-app"><SelectValue /></SelectTrigger>
+            <SelectContent><SelectGroup>{chatApps.map(item => <SelectItem key={item.name} value={item.name}>{item.name}</SelectItem>)}</SelectGroup></SelectContent>
+          </Select>
+          <FieldDescription>T3 Chat is the default. Choose another app here, or override it for an individual prompt.</FieldDescription>
+        </Field>
+        <DialogFooter><Button onClick={() => setPreferencesOpen(false)}>Done</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   </>;
