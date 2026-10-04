@@ -1,4 +1,4 @@
-export type PromptTemplate = { id: string; title: string; description: string; body: string };
+export type PromptTemplate = { id: string; title: string; description: string; body: string; reusableVariables?: string[] };
 
 // Names start with a letter or underscore, followed by letters, digits, underscores or hyphens.
 // Whitespace around the name is allowed. Values are inserted once, without interpreting their content.
