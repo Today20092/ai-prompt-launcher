@@ -4,6 +4,8 @@ Write a prompt, fill its variables, and open it in an AI chatbot. Free and open 
 
 [Open the launcher](https://today20092.github.io/ai-prompt-launcher/)
 
+The main URL opens Promptroom, the personal workbench in `personal-ui/`. It includes reusable prompt editing, multiline variables, complete preview, local saving and JSON backups. See [the workbench guide](personal-ui/README.md) for development and storage details. The [original launcher](https://today20092.github.io/ai-prompt-launcher/legacy/) remains available with its existing templates and share-link behavior. The feature list below describes that original launcher.
+
 This standalone project was extracted from [LLM-Made-Sites](https://github.com/Today20092/LLM-Made-Sites/tree/main/prompt-launcher).
 
 ## Available today
@@ -32,6 +34,6 @@ The shared library, stronger presets, verified provider registry, and stored sho
 
 ## Hosting
 
-GitHub Actions publishes only index.html, style.css, and js/ to GitHub Pages. The workflow checks JavaScript syntax before deployment. Deployment uses the [official GitHub Pages workflow actions](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
+GitHub Actions typechecks, tests and builds `personal-ui`, then publishes its `dist` directory to GitHub Pages. The build stages the original index.html, style.css, and js/ under `legacy/`. Original share links at the main URL redirect there. Deployment uses the [official GitHub Pages workflow actions](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
 
 The current frontend can be hosted as static assets on Cloudflare. Stored short links would require an additional backend; no Cloudflare service is provisioned yet.

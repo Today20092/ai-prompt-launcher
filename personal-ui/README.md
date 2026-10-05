@@ -1,6 +1,12 @@
 # Personal prompt workbench
 
-Issue [#4](https://github.com/Today20092/ai-prompt-launcher/issues/4), built from layout A of prototype `fbd96c5` with Astro, React, and shadcn. This app is separate from the legacy launcher. The repository's Pages workflow still publishes only the root HTML, CSS, and JavaScript.
+Issue [#4](https://github.com/Today20092/ai-prompt-launcher/issues/4), built from layout A of prototype `fbd96c5` with Astro, React, and shadcn. GitHub Pages publishes this workbench at the main URL and preserves the original launcher at `/legacy/`.
+
+## Public deployment
+
+The Pages workflow installs locked dependencies with Node 24 and the package's declared pnpm version, runs typechecking and all tests, then builds and publishes `dist`. `DEPLOY_SITE=https://today20092.github.io` and `DEPLOY_BASE=/ai-prompt-launcher/` configure production assets. Local builds default to `/`, preserving the existing Tailscale preview URL. The build also stages the unchanged original HTML, CSS and JavaScript under `legacy/`. Old `#p=`, `?p=` and `?prompt=` share links redirect to that launcher with their payload intact.
+
+Export a backup from Tailscale and import it on the public site to transfer your workspace. These are separate storage origins. Legacy saved templates remain available in the original launcher on the same GitHub Pages origin; they are not automatically converted to Promptroom templates.
 
 From this directory:
 

@@ -3,6 +3,8 @@ import react from '@astrojs/react';
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
+  site: process.env.DEPLOY_SITE,
+  base: process.env.DEPLOY_BASE ?? '/',
   output: 'static',
   integrations: [react()],
   devToolbar: { enabled: false },

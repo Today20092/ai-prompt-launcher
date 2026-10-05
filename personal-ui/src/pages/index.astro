@@ -10,7 +10,13 @@ import Workbench from '../components/Workbench';
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="Fill a reusable prompt, preview it, and open your chat app." />
     <title>Promptroom · Personal workbench</title>
-    <script is:inline>
+    <script is:inline define:vars={{ legacyPath: `${import.meta.env.BASE_URL.replace(/\/$/, '')}/legacy/` }}>
+      // Existing shared links still belong to the original launcher.
+      const query = new URLSearchParams(window.location.search);
+      const hash = new URLSearchParams(window.location.hash.slice(1));
+      if (query.has('p') || query.has('prompt') || hash.has('p')) {
+        window.location.replace(legacyPath + window.location.search + window.location.hash);
+      }
       document.documentElement.classList.toggle('dark', window.matchMedia('(prefers-color-scheme: dark)').matches);
     </script>
   </head>

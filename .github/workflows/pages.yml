@@ -1,4 +1,4 @@
-name: Deploy launcher
+name: Deploy Promptroom
 on:
   push:
     branches: [main]
@@ -11,24 +11,44 @@ concurrency:
   group: pages
   cancel-in-progress: false
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: personal-ui/package.json
+      - name: Install locked dependencies
+        working-directory: personal-ui
+        run: pnpm install --frozen-lockfile
+      - name: Check legacy JavaScript syntax
+        run: for file in js/*.js; do node --check "$file"; done
+      - name: Typecheck
+        working-directory: personal-ui
+        run: pnpm check
+      - name: Test
+        working-directory: personal-ui
+        run: pnpm test
+      - name: Build workbench and legacy launcher
+        working-directory: personal-ui
+        env:
+          DEPLOY_BASE: /ai-prompt-launcher/
+          DEPLOY_SITE: https://today20092.github.io
+        run: pnpm build
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: personal-ui/dist
   deploy:
+    needs: build
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v6
-      - name: Check JavaScript syntax
-        run: for file in js/*.js; do node --check "$file"; done
       - uses: actions/configure-pages@v5
-      - name: Stage public assets
-        run: |
-          mkdir _site
-          cp index.html style.css _site/
-          cp -r js _site/
-      - uses: actions/upload-pages-artifact@v4
-        with:
-          path: _site
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
