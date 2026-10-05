@@ -23,3 +23,24 @@ The independent spec reviewer found zero concrete deviations or scope creep agai
 - Tailscale Serve HTTPS 8449 proxies localhost 4329. Astro's persistent background preview is running and the HTTPS URL responds with 200. Existing Serve mappings remain intact. Funnel is unused.
 
 Final review: Standards has zero unresolved findings after one accessibility fix; Spec has zero findings.
+
+## Revalidation on 2026-10-04
+
+Ticket #4 was already implemented in commit `9adbcb0`. This revalidation checks branch `codex/personal-mobile-workbench` at `9d72cfb`, including the subsequent saving, backup, and chat-app changes, against the original ticket. No application changes were needed.
+
+- `pnpm check`: zero errors, warnings, or hints.
+- `pnpm exec vitest run src/lib/prompt.test.ts`: four passing rendering and required-value tests.
+- `pnpm test`: all 18 tests passed across four files.
+- `pnpm build`: static production build passed.
+- The Tailscale HTTPS preview returned HTTP 200 and included both starter prompts and the hydrated React island markup.
+- The root HTML, stylesheet, JavaScript, and GitHub Pages workflow have no changes relative to `5958a0a`.
+
+### Standards
+
+The fresh independent standards review found zero hard violations against `CONTRIBUTING.md`. One nonblocking possible duplication was noted in the Web search and Temporary chat selects, which repeat the Default/On/Off conversion. With two occurrences, keeping the controls explicit is reasonable; no refactor was required.
+
+### Spec
+
+The fresh independent spec review found zero concrete deviations from #4. Starter selection, named multiline variables, editing, required-value guidance, complete preview, copy, launch, and a mobile launch panel in normal document flow are present. Later authorized saving, backup, and T3 options work introduced no identified #4 regression.
+
+Browser controls were unavailable in this session, so the interaction, layout, keyboard, and theme checks above were not repeated. The HTTP check confirms preview availability only. Physical phone keyboard behavior still needs device review.
