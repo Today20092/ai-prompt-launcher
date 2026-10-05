@@ -215,7 +215,7 @@ export default function Workbench() {
             </Field>;
           })}
         </FieldGroup>
-        <div className="entry-meta"><span>{rendered.variables.length ? 'Multiline text is welcome.' : 'This template has no variables. It is ready to use.'}</span><span>{rendered.text.length.toLocaleString()} characters in prompt</span></div>
+        <div className="entry-meta">{!rendered.variables.length && <span>This template has no variables. It is ready to use.</span>}<span>{rendered.text.length.toLocaleString()} characters in prompt</span></div>
         <div className="launch-panel">
           <Field className="app-picker"><FieldLabel htmlFor="chat-app">Chat app</FieldLabel>
               <Select value={template.chatApp ?? 'preferred'} onValueChange={name => { persist(updateTemplate(workspace, { ...template, chatApp: name === 'preferred' ? undefined : name as AppName })); setStatus(''); setManualCopy(false); }}><SelectTrigger id="chat-app"><SelectValue /></SelectTrigger>

@@ -81,7 +81,7 @@ export default function BackupControls({ workspace, store, onImported }: Props) 
     <section aria-labelledby="backup-heading" className="flex flex-col gap-3">
       <h2 id="backup-heading">Backups</h2>
       <p className="muted">Transfer your saved prompts, favorites and app settings between browsers. Pasted input is excluded. Any older archived presets are preserved.</p>
-      <div className="flex flex-wrap gap-2">
+      <div className="backup-actions">
         <Button variant="outline" onClick={download}><Download data-icon="inline-start" />Export backup</Button>
         <Dialog open={open} onOpenChange={changeOpen}>
           <DialogTrigger asChild><Button variant="outline"><Upload data-icon="inline-start" />Import backup</Button></DialogTrigger>
