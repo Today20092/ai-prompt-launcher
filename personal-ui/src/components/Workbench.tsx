@@ -252,7 +252,6 @@ export default function Workbench() {
         </details>
         <p className="mobile-session-note">Prompts and their chat apps stay in this browser. Pasted input stays temporary.</p>
           <p className="storage-note">Saved only on this device and browser. Clearing site data removes your saved workspace. Tailscale and GitHub Pages use separate storage origins.</p>
-          <p className="storage-note"><a className="underline" href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/legacy/`}>Open the original launcher</a></p>
         {savingStatus && <div className="storage-status" role="status"><p>{savingStatus}</p><Button variant="outline" onClick={() => persist(workspace)}>Retry saving</Button></div>}
       </section>
     </main>
