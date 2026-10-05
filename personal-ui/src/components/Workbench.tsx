@@ -14,11 +14,15 @@ import { cn } from '@/lib/utils';
 import { t3Handoff, type T3Options } from '@/lib/t3';
 import BackupControls from '@/components/BackupControls';
 import { templateLabel } from '@/lib/backup';
+import ShareControls from '@/components/ShareControls';
+import { readShareLink, saveReceivedCopy, shareRecovery, type ShareSnapshot } from '@/lib/sharing';
 
 const variableLabel = (name: string) => name === 'text' ? 'Your text' : name.replace(/[_-]/g, ' ');
 
 export default function Workbench() {
   const [workspace, setWorkspace] = useState(newWorkspace);
+  const [received, setReceived] = useState<PromptTemplate | null>(null);
+  const [receivedStatus, setReceivedStatus] = useState('');
   const { templates, lastUsedPrompt: selected } = workspace;
   const store = useRef<WorkspaceStore | null>(null);
   const [ready, setReady] = useState(false);
@@ -38,7 +42,7 @@ export default function Workbench() {
   const fields = useRef<Record<string, HTMLTextAreaElement | null>>({});
   const preview = useRef<HTMLDetailsElement>(null);
   const previewText = useRef<HTMLPreElement>(null);
-  const template = templates.find(item => item.id === selected) ?? templates[0];
+  const template = received ?? templates.find(item => item.id === selected) ?? templates[0];
   const values = inputs[template.id] ?? {};
   const rendered = renderPrompt(template.body, values);
   const appName = template.chatApp ?? workspace.preferredApp;
@@ -50,7 +54,7 @@ export default function Workbench() {
   const directT3 = handoff?.direct ?? false;
 
   function setT3Options(change: Partial<T3Options>) {
-    persist(updateTemplate(workspace, { ...template, t3Options: { ...t3Options, ...change } }));
+    changeTemplate({ ...template, t3Options: { ...t3Options, ...change } });
     setStatus('');
     setManualCopy(false);
   }
@@ -62,8 +66,35 @@ export default function Workbench() {
     store.current = storage;
     setWorkspace(restored);
     setSavingStatus(storage.message);
+    try {
+      const incoming = readShareLink(window.location.href);
+      if (incoming) receive(incoming);
+    } catch { setReceivedStatus(shareRecovery); }
     setReady(true);
   }, []);
+
+  function receive(snapshot: ShareSnapshot) {
+    const temporary = { ...snapshot.template, id: crypto.randomUUID() };
+    setReceived(temporary);
+    setInputs(old => ({ ...old, [temporary.id]: snapshot.values ?? {} }));
+    setReceivedStatus('Received prompt. Edits and included values are temporary. Save a copy explicitly to keep the reusable template.');
+    setAttempted(false); setStatus(''); setManualCopy(false);
+  }
+
+  function changeTemplate(next: PromptTemplate) {
+    if (received) setReceived(next);
+    else persist(updateTemplate(workspace, next));
+  }
+
+  function saveCopy() {
+    if (!received || !store.current) return;
+    try {
+      const { next } = saveReceivedCopy(workspace, received);
+      if (!store.current.importWorkspace(next)) { setReceivedStatus(store.current.message); return; }
+      setWorkspace(store.current.data);
+      setReceivedStatus('Independent template copy saved. Included input was excluded. Your last-used selection and preferences are unchanged.');
+    } catch { setReceivedStatus('This template exceeds the single-prompt budget or is invalid. Copy its full text before leaving.'); }
+  }
 
   function persist(next: Workspace) {
     if (!store.current) return;
@@ -73,6 +104,7 @@ export default function Workbench() {
   }
 
   function switchTemplate(id: string) {
+    setReceived(null); setReceivedStatus('');
     persist({ ...workspace, lastUsedPrompt: id });
     setAttempted(false);
     setStatus('');
@@ -101,13 +133,14 @@ export default function Workbench() {
     }
     const next: PromptTemplate = {
       id: creating ? crypto.randomUUID() : template.id,
-      title: draft.title.trim(), description: draft.description.trim(), body: draft.body,
+      title: received && !creating ? draft.title : draft.title.trim(), description: received && !creating ? draft.description : draft.description.trim(), body: draft.body,
     };
-    persist(updateTemplate(workspace, next));
+    if (creating) { setReceived(null); setReceivedStatus(''); persist(updateTemplate(workspace, next)); }
+    else changeTemplate(next);
     setAttempted(false);
     setManualCopy(false);
     setEditing(false);
-    setStatus('Template updated. Fill its variables below.');
+    setStatus(received && !creating ? 'Temporary template updated. Save a copy to keep it.' : 'Template updated. Fill its variables below.');
   }
 
   function checkRequired() {
@@ -188,9 +221,10 @@ export default function Workbench() {
         <p className="session-note">Prompts and their chat apps stay in this browser. Pasted input stays temporary.</p>
       </aside>
       <section id="workspace" className="workspace" aria-labelledby="prompt-title" tabIndex={-1}>
+        {receivedStatus && <div className="storage-status" role="status"><p>{receivedStatus}</p>{received && <Button variant="outline" onClick={saveCopy}>Save a copy</Button>}<Button variant="ghost" onClick={() => { setReceived(null); setReceivedStatus(''); setStatus(''); setManualCopy(false); }}>Return to saved workspace</Button></div>}
         <div className="mobile-picker">
           <Field><FieldLabel htmlFor="prompt-picker">Your prompts</FieldLabel>
-            <Select value={selected} onValueChange={switchTemplate}><SelectTrigger id="prompt-picker"><SelectValue /></SelectTrigger>
+            <Select value={received ? '' : selected} onValueChange={switchTemplate}><SelectTrigger id="prompt-picker"><SelectValue placeholder="Temporary received prompt" /></SelectTrigger>
               <SelectContent><SelectGroup>{templates.map(item => <SelectItem key={item.id} value={item.id}>{workspace.favorites.includes(item.id) ? '★ ' : ''}{templateLabel(item, templates)}</SelectItem>)}</SelectGroup></SelectContent>
             </Select>
           </Field>
@@ -198,7 +232,8 @@ export default function Workbench() {
         <div className="workspace-heading">
           <div className="workspace-heading-text"><h1 id="prompt-title">{templateLabel(template, templates)}</h1>{template.description && <p className="muted">{template.description}</p>}</div>
           <div className="prompt-actions">
-            <Button variant="ghost" size="icon" aria-label={favorite ? 'Remove favorite' : 'Add favorite'} aria-pressed={favorite} onClick={() => persist({ ...workspace, favorites: favorite ? workspace.favorites.filter(id => id !== template.id) : [...workspace.favorites, template.id] })}><Star fill={favorite ? 'currentColor' : 'none'} /></Button>
+            <ShareControls key={template.id} template={template} values={values} onReceived={receive} />
+            <Button variant="ghost" size="icon" disabled={Boolean(received)} aria-label={favorite ? 'Remove favorite' : 'Add favorite'} aria-pressed={favorite} onClick={() => persist({ ...workspace, favorites: favorite ? workspace.favorites.filter(id => id !== template.id) : [...workspace.favorites, template.id] })}><Star fill={favorite ? 'currentColor' : 'none'} /></Button>
             <Button variant="ghost" size="icon" aria-label="Edit template" onClick={event => openEditor(event)}><Pencil /></Button>
           </div>
         </div>
@@ -218,7 +253,7 @@ export default function Workbench() {
         <div className="entry-meta">{!rendered.variables.length && <span>This template has no variables. It is ready to use.</span>}<span>{rendered.text.length.toLocaleString()} characters in prompt</span></div>
         <div className="launch-panel">
           <Field className="app-picker"><FieldLabel htmlFor="chat-app">Chat app</FieldLabel>
-              <Select value={template.chatApp ?? 'preferred'} onValueChange={name => { persist(updateTemplate(workspace, { ...template, chatApp: name === 'preferred' ? undefined : name as AppName })); setStatus(''); setManualCopy(false); }}><SelectTrigger id="chat-app"><SelectValue /></SelectTrigger>
+              <Select value={template.chatApp ?? 'preferred'} onValueChange={name => { changeTemplate({ ...template, chatApp: name === 'preferred' ? undefined : name as AppName }); setStatus(''); setManualCopy(false); }}><SelectTrigger id="chat-app"><SelectValue /></SelectTrigger>
               <SelectContent><SelectGroup><SelectItem value="preferred">Use preferred ({workspace.preferredApp})</SelectItem>{chatApps.map(item => <SelectItem key={item.name} value={item.name}>{item.name}</SelectItem>)}</SelectGroup></SelectContent>
             </Select>
           </Field>
@@ -238,7 +273,7 @@ export default function Workbench() {
                 <Field><FieldLabel htmlFor="t3-profile">Profile</FieldLabel><Input id="t3-profile" value={t3Options.profile ?? ''} placeholder="T3 default" onChange={event => setT3Options({ profile: event.target.value })} /><FieldDescription>Profile name or ID.</FieldDescription></Field>
                 <Field><FieldLabel htmlFor="t3-temporary">Temporary chat</FieldLabel><Select value={t3Options.temporary === undefined ? 'default' : String(t3Options.temporary)} onValueChange={value => setT3Options({ temporary: value === 'default' ? undefined : value === 'true' })}><SelectTrigger id="t3-temporary"><SelectValue /></SelectTrigger><SelectContent><SelectGroup><SelectItem value="default">T3 default</SelectItem><SelectItem value="true">On</SelectItem><SelectItem value="false">Off</SelectItem></SelectGroup></SelectContent></Select><FieldDescription>On creates a chat that T3 does not persist.</FieldDescription></Field>
               </div>
-              <Button variant="ghost" onClick={() => { persist(updateTemplate(workspace, { ...template, t3Options: undefined })); setStatus('T3 options reset to defaults.'); }}>Reset options</Button>
+              <Button variant="ghost" onClick={() => { changeTemplate({ ...template, t3Options: undefined }); setStatus('T3 options reset to defaults.'); }}>Reset options</Button>
             </div>
           </details>}
           <p className="launch-help">{directT3 ? 'Sends your complete prompt as the first message in a new T3 chat, with the options above.' : handoff ? 'This prompt is long. Copies it in full, then opens T3 Chat. Paste to send and choose your options there.' : 'Copies your complete prompt, then opens a new chat. Paste to send.'}</p>
@@ -277,7 +312,7 @@ export default function Workbench() {
             </Field>
           </FieldGroup>
           <DialogFooter className="editor-footer"><Button type="button" variant="outline" onClick={() => setEditing(false)}>Cancel</Button><Button type="submit">Save template</Button></DialogFooter>
-          <p className="editor-note">Template changes are saved in this browser.</p>
+          <p className="editor-note">{received && !creating ? 'Changes stay temporary until you choose Save a copy.' : 'Template changes are saved in this browser.'}</p>
         </form>
       </DialogContent>
     </Dialog>
