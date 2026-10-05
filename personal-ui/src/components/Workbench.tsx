@@ -12,6 +12,8 @@ import { newWorkspace, updateTemplate, WorkspaceStore, type Workspace } from '@/
 import { chatApps, type AppName } from '@/lib/chat-apps';
 import { cn } from '@/lib/utils';
 import { t3Handoff, type T3Options } from '@/lib/t3';
+import BackupControls from '@/components/BackupControls';
+import { templateLabel } from '@/lib/backup';
 
 const variableLabel = (name: string) => name === 'text' ? 'Your text' : name.replace(/[_-]/g, ' ');
 
@@ -180,7 +182,7 @@ export default function Workbench() {
         <p className="muted">Reusable templates</p>
         <nav aria-label="Choose a prompt" className="prompt-list">
           {templates.map(item => <button key={item.id} type="button" className={cn('prompt-nav', item.id === selected && 'is-selected')} aria-current={item.id === selected ? 'true' : undefined} onClick={() => switchTemplate(item.id)}>
-              <strong>{workspace.favorites.includes(item.id) && <Star aria-label="Favorite" className="favorite-icon" />}{item.title}</strong><span>{item.description || 'Your custom template'}</span>
+              <strong>{workspace.favorites.includes(item.id) && <Star aria-label="Favorite" className="favorite-icon" />}{templateLabel(item, templates)}</strong><span>{item.description || 'Your custom template'}</span>
           </button>)}
         </nav>
         <p className="session-note">Prompts and their chat apps stay in this browser. Pasted input stays temporary.</p>
@@ -189,12 +191,12 @@ export default function Workbench() {
         <div className="mobile-picker">
           <Field><FieldLabel htmlFor="prompt-picker">Your prompts</FieldLabel>
             <Select value={selected} onValueChange={switchTemplate}><SelectTrigger id="prompt-picker"><SelectValue /></SelectTrigger>
-              <SelectContent><SelectGroup>{templates.map(item => <SelectItem key={item.id} value={item.id}>{workspace.favorites.includes(item.id) ? '★ ' : ''}{item.title}</SelectItem>)}</SelectGroup></SelectContent>
+              <SelectContent><SelectGroup>{templates.map(item => <SelectItem key={item.id} value={item.id}>{workspace.favorites.includes(item.id) ? '★ ' : ''}{templateLabel(item, templates)}</SelectItem>)}</SelectGroup></SelectContent>
             </Select>
           </Field>
         </div>
         <div className="workspace-heading">
-          <div className="workspace-heading-text"><h1 id="prompt-title">{template.title}</h1>{template.description && <p className="muted">{template.description}</p>}</div>
+          <div className="workspace-heading-text"><h1 id="prompt-title">{templateLabel(template, templates)}</h1>{template.description && <p className="muted">{template.description}</p>}</div>
           <div className="prompt-actions">
             <Button variant="ghost" size="icon" aria-label={favorite ? 'Remove favorite' : 'Add favorite'} aria-pressed={favorite} onClick={() => persist({ ...workspace, favorites: favorite ? workspace.favorites.filter(id => id !== template.id) : [...workspace.favorites, template.id] })}><Star fill={favorite ? 'currentColor' : 'none'} /></Button>
             <Button variant="ghost" size="icon" aria-label="Edit template" onClick={event => openEditor(event)}><Pencil /></Button>
@@ -280,7 +282,7 @@ export default function Workbench() {
       </DialogContent>
     </Dialog>
     <Dialog open={preferencesOpen} onOpenChange={setPreferencesOpen}>
-      <DialogContent onCloseAutoFocus={event => { event.preventDefault(); opener.current?.focus(); }}>
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto" onCloseAutoFocus={event => { event.preventDefault(); opener.current?.focus(); }}>
         <DialogHeader><DialogTitle>Preferences</DialogTitle><DialogDescription>Your preferred app is used for prompts without their own app choice. Saved in this browser.</DialogDescription></DialogHeader>
         <Field><FieldLabel htmlFor="preferred-app">Preferred chat app</FieldLabel>
           <Select value={workspace.preferredApp} onValueChange={name => { persist({ ...workspace, preferredApp: name as AppName }); setStatus(''); setManualCopy(false); }}><SelectTrigger id="preferred-app"><SelectValue /></SelectTrigger>
@@ -288,6 +290,7 @@ export default function Workbench() {
           </Select>
           <FieldDescription>T3 Chat is the default. Choose another app here, or override it for an individual prompt.</FieldDescription>
         </Field>
+        <BackupControls workspace={workspace} store={store.current} onImported={next => { setWorkspace(next); setSavingStatus(''); setAttempted(false); setManualCopy(false); setStatus(''); }} />
         <DialogFooter><Button onClick={() => setPreferencesOpen(false)}>Done</Button></DialogFooter>
       </DialogContent>
     </Dialog>

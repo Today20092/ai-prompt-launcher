@@ -29,7 +29,7 @@ function validApp(value: unknown): value is AppName {
 }
 
 // Validate the whole document before using it. Unknown versions have no migration yet.
-export function readWorkspace(value: unknown): Workspace {
+export function readWorkspace(value: unknown, recoverSelection = true): Workspace {
   if (!record(value) || value.version !== 1 || !Array.isArray(value.templates) || !value.templates.length ||
       !strings(value.favorites) || !Array.isArray(value.presets) || !validApp(value.preferredApp) || typeof value.lastUsedPrompt !== 'string') throw new Error('Invalid workspace');
   const templates: PromptTemplate[] = value.templates.map(item => {
@@ -53,6 +53,7 @@ export function readWorkspace(value: unknown): Workspace {
     return { id: item.id, templateId: item.templateId, name: item.name, values: Object.fromEntries(Object.entries(item.values)) as Record<string, string>, ...(item.app ? { app: item.app } : {}) };
   });
   if (new Set(presets.map(item => item.id)).size !== presets.length) throw new Error('Duplicate preset');
+  if (!recoverSelection && !ids.includes(value.lastUsedPrompt)) throw new Error('Invalid last-used prompt');
   // A removed last-used prompt is a recoverable stale reference, not corrupt data.
   const lastUsedPrompt = ids.includes(value.lastUsedPrompt) ? value.lastUsedPrompt : 'grammar';
   if (lastUsedPrompt === 'grammar' && !ids.includes('grammar')) templates.push(structuredClone(starterTemplates[0]));
@@ -71,7 +72,10 @@ export class WorkspaceStore {
   private previous: string | null = null;
   private blocked = false;
   private loaded = false;
+  private fresh = false;
   constructor(private storage: StorageAccess) {}
+
+  get canRestorePreferences() { return this.fresh; }
 
   load() {
     try {
@@ -83,8 +87,9 @@ export class WorkspaceStore {
     try {
       this.data = this.previous === null ? newWorkspace() : readWorkspace(JSON.parse(this.previous));
       this.loaded = true;
+      this.fresh = this.previous === null;
       this.message = '';
-      if (this.previous === null) this.save(this.data);
+      if (this.previous === null) this.write(this.data);
     } catch {
       this.blocked = true;
       this.message = recoveryMessage;
@@ -94,6 +99,27 @@ export class WorkspaceStore {
 
   save(next: Workspace) {
     this.data = readWorkspace(next);
+    this.fresh = false;
+    return this.write(this.data);
+  }
+
+  // Imports become visible only after the complete document is safely saved.
+  importWorkspace(next: Workspace) {
+    try {
+      const validated = readWorkspace(next, false);
+      if (this.write(validated)) {
+        this.data = validated;
+        this.fresh = false;
+        return true;
+      }
+    } catch {
+      this.message = 'The imported workspace is invalid.';
+    }
+    this.message = `Import failed. Your existing workspace is unchanged. ${this.message}`;
+    return false;
+  }
+
+  private write(next: Workspace) {
     if (this.blocked) return false;
     try {
       const storage = this.storage();
@@ -113,7 +139,7 @@ export class WorkspaceStore {
         this.message = 'Saved data changed in another tab. Saving is paused to protect it. Keep this tab open to copy any unsaved work, then reload to use the latest saved workspace.';
         return false;
       }
-      const raw = JSON.stringify(this.data);
+      const raw = JSON.stringify(next);
       storage.setItem(WORKSPACE_KEY, raw);
       this.previous = raw;
       this.message = '';
