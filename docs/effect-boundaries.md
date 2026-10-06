@@ -68,14 +68,27 @@ Schema/Effect sources were consulted for v4 APIs; v3 generator and mutability AP
 must not be copied into future changes.
 
 Measured production `_astro/*.js` total (all three minified shipped chunks,
-uncompressed): before 398,562 bytes; after 477,058 bytes. Increase: 78,496 bytes
+uncompressed): before 398,562 bytes; after 477,064 bytes. Increase: 78,502 bytes
 (19.7%). This is the validation/effect runtime cost for these boundaries, not a
 provider or transfer-size guarantee. The app still builds static assets only.
 
 Locked install, focused behavior tests and typechecking passed. Both root and
 `/ai-prompt-launcher` base-path builds passed and staged the original launcher at
 `legacy/`. The deploy workflow, legacy sources and redirects were not changed.
-Final full-suite/review evidence is recorded below when completed.
+Final locked install passed; `pnpm check` reported zero errors/warnings/hints;
+`pnpm test` passed 39 tests in 7 files. Both production builds passed. Pages
+asset references include `/ai-prompt-launcher/`. Staged legacy HTML/CSS hashes
+match their repository sources. DOM integration tests use project-local
+`@testing-library/react` and `jsdom` dev dependencies, which do not ship to users.
+
+The Implement workflow's Standards and Spec reviews identified an unknown-field
+compatibility defect and partial component integration coverage. The defect was
+fixed by limiting version classification to versioned documents, with a regression
+test retaining unrelated T3 fields' recognized-field exclusion. App literals now
+derive from the existing destination list. Integration coverage now exercises
+actual event handlers for cancelled/superseded reads, stale import review, repeated
+clicks, disposal, native sharing and provider fallback. Tests assert observable
+behavior, without coupling to Effect internals or component markup.
 
 Interactive browser verification is **blocked**: the computer-use inventory in this
 execution environment returns no browsers or apps. Desktop/mobile save/reload,

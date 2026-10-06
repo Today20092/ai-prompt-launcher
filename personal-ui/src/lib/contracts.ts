@@ -1,8 +1,9 @@
 import * as Schema from 'effect/Schema';
+import { chatApps } from './chat-apps';
 
 // Wire contracts own recognized fields; readers add domain/reference checks.
 // mutable preserves the existing simple React/deterministic transformation model.
-export const AppSchema = Schema.Literals(['T3 Chat', 'ChatGPT', 'Claude']);
+export const AppSchema = Schema.Literals(chatApps.map(app => app.name));
 export const T3OptionsSchema = Schema.Struct({
   model: Schema.optional(Schema.String), effort: Schema.optional(Schema.String),
   search: Schema.optional(Schema.Boolean),

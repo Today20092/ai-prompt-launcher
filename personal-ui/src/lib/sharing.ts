@@ -10,7 +10,7 @@ export const shareRecovery = 'This shared prompt is invalid, unsupported or too 
 
 export function readSnapshot(raw: string): ShareSnapshot {
   if (new TextEncoder().encode(raw).length > SHARE_FILE_LIMIT) throw new DataFailure('OversizedData');
-  const value = decodeContract(SnapshotSchema, parseJson(raw));
+  const value = decodeContract(SnapshotSchema, parseJson(raw), true);
   const { title, description, body } = value.template;
   if (!title.trim() || !body.trim()) throw new DataFailure();
   const snapshot: ShareSnapshot = { format: 'promptroom-share', version: 1, template: { title, description, body } };

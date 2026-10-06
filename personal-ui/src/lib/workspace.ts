@@ -20,7 +20,7 @@ export function newWorkspace(): Workspace {
 
 // Validate the whole document before using it. Unknown versions have no migration yet.
 export function readWorkspace(input: unknown, recoverSelection = true): Workspace {
-  const value = decodeContract(WorkspaceSchema, input);
+  const value = decodeContract(WorkspaceSchema, input, true);
   const unique = (items: readonly string[]) => new Set(items).size === items.length;
   if (!value.templates.length || !unique(value.favorites)) throw new DataFailure();
   const templates = value.templates.map(item => {

@@ -9,7 +9,7 @@ export function exportBackup(workspace: Workspace): string {
 }
 
 export function readBackup(raw: string): Workspace {
-  const value = decodeContract(BackupSchema, parseJson(raw));
+  const value = decodeContract(BackupSchema, parseJson(raw), true);
   return readWorkspace(value.workspace, false);
 }
 
