@@ -1,15 +1,15 @@
+import * as Effect from 'effect/Effect';
 import type { PromptTemplate } from './prompt';
 import { starterTemplates } from './templates';
-import { chatApps, type AppName } from './chat-apps';
 import { readT3Options } from './t3';
+import { decodeContract, DataFailure, parseJson } from './validation';
+import { WorkspaceSchema, type Workspace } from './contracts';
+import { runBoundarySync, storageOperation, failure, type Outcome } from './boundary';
+export type { Workspace } from './contracts';
 
 export const WORKSPACE_KEY = 'promptroom.workspace';
 // Retained only to preserve previously saved data. Presets are no longer a feature.
-type Preset = { id: string; templateId: string; name: string; values: Record<string, string>; app?: AppName };
-export type Workspace = {
-  version: 1; templates: PromptTemplate[]; favorites: string[]; presets: Preset[];
-  preferredApp: AppName; lastUsedPrompt: string;
-};
+type Preset = Workspace['presets'][number];
 type StorageAccess = () => Pick<Storage, 'getItem' | 'setItem'>;
 export const recoveryMessage = 'Saved data could not be read safely. The original is untouched and saving is paused. Copy the promptroom.workspace value from browser storage before repairing it, or reopen with a compatible app version. This tab still works for the session.';
 const savingMessage = 'Saving failed. Changes are available in this tab only. Allow browser storage or free space, then retry saving before closing this tab.';
@@ -18,43 +18,28 @@ export function newWorkspace(): Workspace {
   return { version: 1, templates: structuredClone(starterTemplates), favorites: [], presets: [], preferredApp: 'T3 Chat', lastUsedPrompt: 'grammar' };
 }
 
-function record(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-function strings(value: unknown): value is string[] {
-  return Array.isArray(value) && value.every(item => typeof item === 'string') && new Set(value).size === value.length;
-}
-function validApp(value: unknown): value is AppName {
-  return chatApps.some(app => app.name === value);
-}
-
 // Validate the whole document before using it. Unknown versions have no migration yet.
-export function readWorkspace(value: unknown, recoverSelection = true): Workspace {
-  if (!record(value) || value.version !== 1 || !Array.isArray(value.templates) || !value.templates.length ||
-      !strings(value.favorites) || !Array.isArray(value.presets) || !validApp(value.preferredApp) || typeof value.lastUsedPrompt !== 'string') throw new Error('Invalid workspace');
-  const templates: PromptTemplate[] = value.templates.map(item => {
-    if (!record(item) || typeof item.id !== 'string' || !item.id || typeof item.title !== 'string' || !item.title.trim() ||
-        typeof item.description !== 'string' || typeof item.body !== 'string' || !item.body.trim() ||
-        (item.reusableVariables !== undefined && !strings(item.reusableVariables)) ||
-        (item.chatApp !== undefined && !validApp(item.chatApp))) throw new Error('Invalid template');
-    const reusableVariables = item.reusableVariables as string[] | undefined;
+export function readWorkspace(input: unknown, recoverSelection = true): Workspace {
+  const value = decodeContract(WorkspaceSchema, input);
+  const unique = (items: readonly string[]) => new Set(items).size === items.length;
+  if (!value.templates.length || !unique(value.favorites)) throw new DataFailure();
+  const templates = value.templates.map(item => {
+    if (!item.id || !item.title.trim() || !item.body.trim() ||
+        (item.reusableVariables && !unique(item.reusableVariables))) throw new DataFailure();
     return { id: item.id, title: item.title, description: item.description, body: item.body,
-      ...(reusableVariables !== undefined ? { reusableVariables } : {}), ...(item.chatApp ? { chatApp: item.chatApp } : {}),
+      ...(item.reusableVariables !== undefined ? { reusableVariables: item.reusableVariables } : {}),
+      ...(item.chatApp !== undefined ? { chatApp: item.chatApp } : {}),
       ...(item.t3Options !== undefined ? { t3Options: readT3Options(item.t3Options) } : {}) };
   });
   const ids = templates.map(item => item.id);
-  if (new Set(ids).size !== ids.length || value.favorites.some(id => !ids.includes(id))) throw new Error('Invalid template references');
+  if (!unique(ids) || value.favorites.some(id => !ids.includes(id))) throw new DataFailure();
   const presets: Preset[] = value.presets.map(item => {
-    if (!record(item) || typeof item.id !== 'string' || !item.id || typeof item.templateId !== 'string' ||
-        typeof item.name !== 'string' || !item.name.trim() || !record(item.values) ||
-        (item.app !== undefined && !validApp(item.app))) throw new Error('Invalid preset');
-    const template = templates.find(template => template.id === item.templateId);
-    if (!template || Object.values(item.values).some(value => typeof value !== 'string')) throw new Error('Invalid archived preset');
-    return { id: item.id, templateId: item.templateId, name: item.name, values: Object.fromEntries(Object.entries(item.values)) as Record<string, string>, ...(item.app ? { app: item.app } : {}) };
+    if (!item.id || !item.name.trim() || !ids.includes(item.templateId)) throw new DataFailure();
+    return { id: item.id, templateId: item.templateId, name: item.name, values: { ...item.values },
+      ...(item.app !== undefined ? { app: item.app } : {}) };
   });
-  if (new Set(presets.map(item => item.id)).size !== presets.length) throw new Error('Duplicate preset');
-  if (!recoverSelection && !ids.includes(value.lastUsedPrompt)) throw new Error('Invalid last-used prompt');
-  // A removed last-used prompt is a recoverable stale reference, not corrupt data.
+  if (!unique(presets.map(item => item.id))) throw new DataFailure();
+  if (!recoverSelection && !ids.includes(value.lastUsedPrompt)) throw new DataFailure();
   const lastUsedPrompt = ids.includes(value.lastUsedPrompt) ? value.lastUsedPrompt : 'grammar';
   if (lastUsedPrompt === 'grammar' && !ids.includes('grammar')) templates.push(structuredClone(starterTemplates[0]));
   return { version: 1, templates, favorites: [...value.favorites], presets, preferredApp: value.preferredApp, lastUsedPrompt };
@@ -69,6 +54,7 @@ export function updateTemplate(workspace: Workspace, template: PromptTemplate): 
 export class WorkspaceStore {
   data = newWorkspace();
   message = '';
+  outcome: Outcome<void> = { _tag: 'Success', value: undefined };
   private previous: string | null = null;
   private blocked = false;
   private loaded = false;
@@ -78,20 +64,24 @@ export class WorkspaceStore {
   get canRestorePreferences() { return this.fresh; }
 
   load() {
-    try {
-      this.previous = this.storage().getItem(WORKSPACE_KEY);
-    } catch {
+    const read = runBoundarySync(storageOperation(() => this.storage().getItem(WORKSPACE_KEY)));
+    if (read._tag !== 'Success') {
+      this.outcome = read;
       this.message = savingMessage;
       return this.data;
     }
+    this.previous = read.value;
     try {
-      this.data = this.previous === null ? newWorkspace() : readWorkspace(JSON.parse(this.previous));
+      this.data = this.previous === null ? newWorkspace() : readWorkspace(parseJson(this.previous));
       this.loaded = true;
       this.fresh = this.previous === null;
       this.message = '';
+      this.outcome = { _tag: 'Success', value: undefined };
       if (this.previous === null) this.write(this.data);
-    } catch {
+    } catch (error) {
+      if (!(error instanceof DataFailure)) throw error;
       this.blocked = true;
+      this.outcome = failure(error._tag);
       this.message = recoveryMessage;
     }
     return this.data;
@@ -112,7 +102,9 @@ export class WorkspaceStore {
         this.fresh = false;
         return true;
       }
-    } catch {
+    } catch (error) {
+      if (!(error instanceof DataFailure)) throw error;
+      this.outcome = failure(error._tag);
       this.message = 'The imported workspace is invalid.';
     }
     this.message = `Import failed. Your existing workspace is unchanged. ${this.message}`;
@@ -121,32 +113,25 @@ export class WorkspaceStore {
 
   private write(next: Workspace) {
     if (this.blocked) return false;
-    try {
-      const storage = this.storage();
-      if (!this.loaded) {
-        // A failed initial read cannot authorize overwriting existing data.
-        const existing = storage.getItem(WORKSPACE_KEY);
-        if (existing !== null) {
-          this.blocked = true;
-          this.message = 'Existing saved data is now available. Saving is paused to protect it. Copy any session work, then reload to restore the saved workspace.';
-          return false;
-        }
-        this.loaded = true;
-      }
-      // Prevent a stale tab from overwriting newer data written in another tab.
-      if (storage.getItem(WORKSPACE_KEY) !== this.previous) {
-        this.blocked = true;
-        this.message = 'Saved data changed in another tab. Saving is paused to protect it. Keep this tab open to copy any unsaved work, then reload to use the latest saved workspace.';
-        return false;
-      }
-      const raw = JSON.stringify(next);
-      storage.setItem(WORKSPACE_KEY, raw);
-      this.previous = raw;
-      this.message = '';
-      return true;
-    } catch {
-      this.message = savingMessage;
+    const raw = JSON.stringify(next);
+    const outcome = runBoundarySync(Effect.gen({ self: this }, function* () {
+      const storage = yield* storageOperation(() => this.storage());
+      const existing = yield* storageOperation(() => storage.getItem(WORKSPACE_KEY));
+      if ((!this.loaded && existing !== null) || existing !== this.previous) return yield* Effect.fail(failure('StorageConflict'));
+      yield* storageOperation(() => storage.setItem(WORKSPACE_KEY, raw));
+    }));
+    this.outcome = outcome;
+    if (outcome._tag === 'StorageConflict') {
+      this.blocked = true;
+      this.message = this.loaded
+        ? 'Saved data changed in another tab. Saving is paused to protect it. Keep this tab open to copy any unsaved work, then reload to use the latest saved workspace.'
+        : 'Existing saved data is now available. Saving is paused to protect it. Copy any session work, then reload to restore the saved workspace.';
       return false;
     }
+    if (outcome._tag !== 'Success') { this.message = savingMessage; return false; }
+    this.loaded = true;
+    this.previous = raw;
+    this.message = '';
+    return true;
   }
 }

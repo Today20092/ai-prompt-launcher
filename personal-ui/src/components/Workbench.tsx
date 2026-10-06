@@ -17,9 +17,14 @@ import { templateLabel } from '@/lib/backup';
 import ShareControls from '@/components/ShareControls';
 import { readShareLink, saveReceivedCopy, shareRecovery, type ShareSnapshot } from '@/lib/sharing';
 
+import { beginClipboard, beginProviderLaunch, clipboardBrowser, providerBrowser, LatestOperation } from '@/lib/browser';
+
 const variableLabel = (name: string) => name === 'text' ? 'Your text' : name.replace(/[_-]/g, ' ');
 
 export default function Workbench() {
+  const operations = useRef(new LatestOperation());
+  const generation = useRef(0);
+  useEffect(() => () => { generation.current++; operations.current.cancel(); }, []);
   const [workspace, setWorkspace] = useState(newWorkspace);
   const [received, setReceived] = useState<PromptTemplate | null>(null);
   const [receivedStatus, setReceivedStatus] = useState('');
@@ -52,6 +57,7 @@ export default function Workbench() {
   const t3Options = template.t3Options ?? {};
   const handoff = app.name === 'T3 Chat' ? t3Handoff(rendered.text, t3Options) : null;
   const directT3 = handoff?.direct ?? false;
+  useEffect(() => { generation.current++; operations.current.cancel(); setBusy(false); }, [template, rendered.text, appName]);
 
   function setT3Options(change: Partial<T3Options>) {
     changeTemplate({ ...template, t3Options: { ...t3Options, ...change } });
@@ -159,43 +165,36 @@ export default function Workbench() {
   }
 
   async function copyPrompt() {
-    if (!checkRequired()) return;
+    if (operations.current.active || !checkRequired()) return;
+    const attempt = ++generation.current;
     setBusy(true);
     try {
-      await navigator.clipboard.writeText(rendered.text);
-      setManualCopy(false);
-      setStatus('Complete prompt copied.');
-    } catch { showManualCopy(); }
-    finally { setBusy(false); }
+      const outcome = await operations.current.run(beginClipboard(clipboardBrowser(), rendered.text));
+      if (attempt !== generation.current || outcome._tag === 'Cancelled') return;
+      if (outcome._tag === 'Success') { setManualCopy(false); setStatus('Complete prompt copied.'); }
+      else showManualCopy();
+    } catch { if (attempt === generation.current) setStatus('An unexpected error interrupted copying. Your prompt remains available.'); }
+    finally { if (attempt === generation.current && !operations.current.active) setBusy(false); }
   }
 
   async function launchPrompt() {
-    if (!checkRequired()) return;
-    if (handoff?.direct) {
-      window.open(handoff.url, '_blank', 'noopener,noreferrer');
-      // noopener can return null even when the tab opens; always offer a retry link.
-      setManualCopy(true);
-      setStatus('Opening T3 Chat with your prompt as the first message. If no tab opens, use the send link below.');
-      return;
-    }
-    // Open during the user gesture, before awaiting clipboard permission.
-    const destination = window.open('about:blank', '_blank');
-    if (!destination) {
-      setStatus('Your browser blocked the new tab. Use Copy prompt, then open your chat app below.');
-      setManualCopy(true);
-      return;
-    }
-    destination.opener = null;
+    if (operations.current.active || !checkRequired()) return;
+    const attempt = ++generation.current;
     setBusy(true);
     try {
-      await navigator.clipboard.writeText(rendered.text);
-      destination.location.replace(app.url);
-      setManualCopy(false);
-      setStatus(handoff ? 'Long prompt copied in full. Paste it into T3 Chat and set your model, search and profile there. URL options cannot be applied on this copy-and-paste path.' : `Prompt copied. Paste it into ${app.name} to send.`);
-    } catch {
-      destination.close();
-      showManualCopy();
-    } finally { setBusy(false); }
+      const outcome = await operations.current.run(beginProviderLaunch(providerBrowser(), rendered.text, handoff?.direct ? handoff.url : app.url, Boolean(handoff?.direct)));
+      if (attempt !== generation.current || outcome._tag === 'Cancelled') return;
+      if (outcome._tag === 'ClipboardFailure') showManualCopy();
+      else if (outcome._tag !== 'Success') {
+        setStatus('Your browser blocked the new tab. Use Copy prompt, then open your chat app below.'); setManualCopy(true);
+      } else if (handoff?.direct) {
+        setManualCopy(true); setStatus('Opening T3 Chat with your prompt as the first message. If no tab opens, use the send link below.');
+      } else {
+        setManualCopy(false);
+        setStatus(handoff ? 'Long prompt copied in full. Paste it into T3 Chat and set your model, search and profile there. URL options cannot be applied on this copy-and-paste path.' : `Prompt copied. Paste it into ${app.name} to send.`);
+      }
+    } catch { if (attempt === generation.current) setStatus('An unexpected error interrupted opening the app. Your prompt remains available.'); }
+    finally { if (attempt === generation.current && !operations.current.active) setBusy(false); }
   }
 
   return <>

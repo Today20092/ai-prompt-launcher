@@ -1,7 +1,4 @@
-import type { AppName } from './chat-apps';
-import type { T3Options } from './t3';
-
-export type PromptTemplate = { id: string; title: string; description: string; body: string; chatApp?: AppName; t3Options?: T3Options; reusableVariables?: string[] };
+export type { PromptTemplate } from './contracts';
 
 // Names start with a letter or underscore, followed by letters, digits, underscores or hyphens.
 // Whitespace around the name is allowed. Values are inserted once, without interpreting their content.
