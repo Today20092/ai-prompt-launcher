@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -6,6 +6,8 @@ import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSet, FieldLegend 
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { createSnapshot, exportPrompt, readSnapshot, shareLink, SHARE_FILE_LIMIT, shareRecovery, type ShareSnapshot } from '@/lib/sharing';
+import { beginClipboard, beginDeviceShare, clipboardBrowser, sharingBrowser, downloadText, readFile, LatestOperation } from '@/lib/browser';
+import { runBoundarySync } from '@/lib/boundary';
 import { renderPrompt, type PromptTemplate } from '@/lib/prompt';
 
 type Props = { template: PromptTemplate; values: Record<string, string>; onReceived: (snapshot: ShareSnapshot) => void };
@@ -17,6 +19,9 @@ export default function ShareControls({ template, values, onReceived }: Props) {
   const [manual, setManual] = useState('');
   const [busy, setBusy] = useState(false);
   const generation = useRef(0);
+  const operations = useRef(new LatestOperation());
+  useEffect(() => () => { generation.current++; operations.current.cancel(); }, []);
+  useEffect(() => { generation.current++; operations.current.cancel(); setBusy(false); }, [template, values]);
   const rendered = renderPrompt(template.body, values);
   const snapshot = createSnapshot(template, values, selected);
   const link = typeof window === 'undefined' ? null : shareLink(snapshot, window.location.href);
@@ -24,41 +29,41 @@ export default function ShareControls({ template, values, onReceived }: Props) {
   const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
 
   function changeOpen(next: boolean) {
-    generation.current++;
+    generation.current++; operations.current.cancel();
     setOpen(next); setSelected([]); setStatus(''); setManual(''); setBusy(false);
   }
 
   async function copy(text: string, message: string) {
+    if (operations.current.active) return;
+    const attempt = ++generation.current;
     setBusy(true);
-    try { await navigator.clipboard.writeText(text); setStatus(message); setManual(''); }
-    catch { setManual(text); setStatus('Clipboard access failed. Select and copy the complete text below.'); }
-    finally { setBusy(false); }
+    try {
+      const outcome = await operations.current.run(beginClipboard(clipboardBrowser(), text));
+      if (attempt !== generation.current) return;
+      if (outcome._tag === 'Success') { setStatus(message); setManual(''); }
+      else if (outcome._tag !== 'Cancelled') { setManual(text); setStatus('Clipboard access failed. Select and copy the complete text below.'); }
+    } catch { if (attempt === generation.current) setStatus('An unexpected error interrupted copying. Try again.'); }
+    finally { if (attempt === generation.current) setBusy(false); }
   }
 
   async function deviceShare() {
-    if (!link) return;
+    if (!link || operations.current.active) return;
+    const attempt = ++generation.current;
     setBusy(true);
     try {
-      const data = { url: link };
-      if (navigator.canShare && !navigator.canShare(data)) { setStatus('The device cannot share this link. Use Copy link or download the template.'); return; }
-      await navigator.share(data);
-      setStatus('Link handed to the device share menu.');
-    } catch (error) {
-      setStatus(error instanceof Error && error.name === 'AbortError' ? 'Sharing cancelled. You can still copy or download.' : 'Device sharing failed. Use Copy link or download the template.');
-    } finally { setBusy(false); }
+      const outcome = await operations.current.run(beginDeviceShare(sharingBrowser(), link));
+      if (attempt !== generation.current) return;
+      setStatus(outcome._tag === 'Success' ? 'Link handed to the device share menu.' : outcome._tag === 'Cancelled' ? 'Sharing cancelled. You can still copy or download.' : 'Device sharing failed or is unavailable. Use Copy link or download the template.');
+    } catch { if (attempt === generation.current) setStatus('An unexpected error interrupted sharing. Try Copy link.'); }
+    finally { if (attempt === generation.current) setBusy(false); }
   }
 
   function download() {
-    let url: string | undefined;
     try {
-      url = URL.createObjectURL(new Blob([exportPrompt(template)], { type: 'application/json' }));
-      const anchor = document.createElement('a');
-      anchor.href = url; anchor.download = 'promptroom-prompt.json';
-      document.body.append(anchor);
-      try { anchor.click(); } finally { anchor.remove(); }
+      const outcome = runBoundarySync(downloadText(exportPrompt(template), 'promptroom-prompt.json'));
+      if (outcome._tag !== 'Success') throw new Error('Download failed');
       setStatus('Template download requested. Check your downloads. Current input is excluded.');
     } catch { setManual(template.body); setStatus('Template download failed or exceeds the 256 KiB file budget. Copy the complete template below.'); }
-    finally { if (url) { const created = url; window.setTimeout(() => URL.revokeObjectURL(created), 1000); } }
   }
 
   return <Dialog open={open} onOpenChange={changeOpen}>
@@ -68,7 +73,7 @@ export default function ShareControls({ template, values, onReceived }: Props) {
       <FieldSet><FieldLegend>Link content</FieldLegend>
         <FieldDescription>{selected.length ? 'Template with selected temporary values. Anyone with the link can read them.' : 'Template only. Your pasted input stays private.'}</FieldDescription>
         <FieldGroup>{rendered.variables.map((name, index) => <Field key={name} orientation="horizontal">
-          <input type="checkbox" id={`share-value-${index}`} className="accent-primary focus-visible:outline-2 focus-visible:outline-ring" checked={selected.includes(name)} onChange={event => { setSelected(old => event.target.checked ? [...old, name] : old.filter(item => item !== name)); setStatus(''); setManual(''); }} />
+          <input type="checkbox" id={`share-value-${index}`} className="accent-primary focus-visible:outline-2 focus-visible:outline-ring" checked={selected.includes(name)} onChange={event => { generation.current++; operations.current.cancel(); setBusy(false); setSelected(old => event.target.checked ? [...old, name] : old.filter(item => item !== name)); setStatus(''); setManual(''); }} />
           <FieldLabel htmlFor={`share-value-${index}`}>Include {name}</FieldLabel>
         </Field>)}</FieldGroup>
       </FieldSet>
@@ -102,13 +107,18 @@ export default function ShareControls({ template, values, onReceived }: Props) {
         <Button variant="outline" onClick={download}>Download template JSON</Button>
       <Field><FieldLabel htmlFor="single-prompt-file">Open single-prompt JSON</FieldLabel><Input id="single-prompt-file" type="file" accept=".json,application/json" onChange={async event => {
         const file = event.target.files?.[0]; const attempt = ++generation.current;
-        if (!file) return;
+        operations.current.cancel();
+        if (!file) { setBusy(false); return; }
+        setBusy(true);
         try {
-          if (file.size > SHARE_FILE_LIMIT) throw new Error(shareRecovery);
-          const incoming = readSnapshot(await file.text());
+          const outcome = await operations.current.run(readFile(file, SHARE_FILE_LIMIT));
+          if (outcome._tag === 'Cancelled') return;
+          if (outcome._tag !== 'Success') throw new Error(shareRecovery);
+          const incoming = readSnapshot(outcome.value);
           if (attempt !== generation.current) return;
           onReceived(incoming); changeOpen(false);
         } catch { if (attempt === generation.current) setStatus(shareRecovery); }
+        finally { if (attempt === generation.current) setBusy(false); }
       }} /></Field>
         </div>
       </details>

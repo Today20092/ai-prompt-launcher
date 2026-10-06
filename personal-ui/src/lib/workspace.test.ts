@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import { exportBackup, planImport, readBackup } from './backup';
-import { WORKSPACE_KEY, WorkspaceStore, newWorkspace } from './workspace';
+import { WORKSPACE_KEY, WorkspaceStore, newWorkspace, readWorkspace } from './workspace';
 
 function browserStorage(initial: string | null = null) {
   let value = initial;
@@ -88,4 +88,46 @@ test('only a fresh untouched workspace restores imported preferences', () => {
   untouched.load();
   untouched.save({ ...untouched.data, preferredApp: 'ChatGPT' });
   expect(untouched.canRestorePreferences).toBe(false);
+});
+
+test('storage failure exposes an explicit outcome without authorizing replacement', () => {
+  let denied = true;
+  const storage = browserStorage(JSON.stringify({ ...newWorkspace(), preferredApp: 'Claude' }));
+  const store = new WorkspaceStore(() => { if (denied) throw new Error('Denied'); return storage; });
+  store.load();
+  expect(store.outcome).toEqual({ _tag: 'StorageUnavailable' });
+  denied = false;
+  expect(store.save(newWorkspace())).toBe(false);
+  expect(store.outcome).toEqual({ _tag: 'StorageConflict' });
+  expect(new WorkspaceStore(() => storage).load().preferredApp).toBe('Claude');
+});
+
+test('v1 schema selects persistent fields without altering exact text or archived metadata', () => {
+  const workspace = newWorkspace();
+  const template = { ...workspace.templates[0], title: '  Unicode 🐱  ', body: ' \n{{text}} &?#%+\r\n ', reusableVariables: ['text'], chatApp: 'Claude' as const, t3Options: { temporary: false, search: false }, inputs: { text: 'SESSION ONLY' } };
+  const input = { ...workspace, templates: [template], favorites: [template.id], presets: [{ id: 'archived', templateId: template.id, name: ' old ', values: { text: ' archived\nvalue ' }, app: 'ChatGPT' }], inputs: { text: 'SESSION ONLY' }, future: true };
+  const restored = readWorkspace(input);
+  expect(restored.templates[0]).toEqual({ id: template.id, title: '  Unicode 🐱  ', description: template.description, body: ' \n{{text}} &?#%+\r\n ', reusableVariables: ['text'], chatApp: 'Claude', t3Options: { temporary: false, search: false } });
+  expect(restored.presets).toEqual(input.presets);
+  expect(exportBackup(restored)).not.toContain('SESSION ONLY');
+  expect(restored).not.toHaveProperty('future');
+});
+
+test('a stale selection alone recovers but invalid references or options protect storage', () => {
+  const valid = { ...newWorkspace(), lastUsedPrompt: 'removed' };
+  expect(readWorkspace(valid).lastUsedPrompt).toBe('grammar');
+  for (const value of [
+    { ...valid, favorites: ['missing'] },
+    { ...valid, templates: [...valid.templates, valid.templates[0]] },
+    { ...valid, templates: [{ ...valid.templates[0], t3Options: { search_limit: 6 } }] },
+    { ...valid, presets: [{ id: 'old', templateId: 'missing', name: 'old', values: {} }] },
+  ]) {
+    const raw = JSON.stringify(value);
+    const storage = browserStorage(raw);
+    const store = new WorkspaceStore(() => storage);
+    store.load();
+    expect(store.outcome).toEqual({ _tag: 'InvalidData' });
+    expect(store.save(newWorkspace())).toBe(false);
+    expect(storage.getItem(WORKSPACE_KEY)).toBe(raw);
+  }
 });

@@ -1,5 +1,7 @@
 import { readWorkspace, type Workspace } from './workspace';
 import type { PromptTemplate } from './prompt';
+import { decodeContract, parseJson } from './validation';
+import { BackupSchema } from './contracts';
 
 export function exportBackup(workspace: Workspace): string {
   // The saved-data reader selects only persistent fields, never current inputs.
@@ -7,11 +9,7 @@ export function exportBackup(workspace: Workspace): string {
 }
 
 export function readBackup(raw: string): Workspace {
-  const value: unknown = JSON.parse(raw);
-  if (typeof value !== 'object' || value === null || !('format' in value) || value.format !== 'promptroom-backup' ||
-      !('version' in value) || value.version !== 1 || !('workspace' in value)) {
-    throw new Error('Choose a supported Promptroom backup, version 1.');
-  }
+  const value = decodeContract(BackupSchema, parseJson(raw), true);
   return readWorkspace(value.workspace, false);
 }
 

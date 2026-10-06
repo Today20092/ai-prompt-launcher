@@ -1,26 +1,22 @@
 import { renderPrompt, type PromptTemplate } from './prompt';
 import { readWorkspace, type Workspace } from './workspace';
+import { decodeContract, DataFailure, parseJson } from './validation';
+import { SnapshotSchema, type ShareSnapshot } from './contracts';
+export type { ShareSnapshot } from './contracts';
 
 export const SHARE_URL_LIMIT = 8000;
 export const SHARE_FILE_LIMIT = 256 * 1024;
 export const shareRecovery = 'This shared prompt is invalid, unsupported or too large. Your saved workspace is unchanged. Ask the sender for a template or a single-prompt JSON file.';
-export type ShareSnapshot = { format: 'promptroom-share'; version: 1; template: Pick<PromptTemplate, 'title' | 'description' | 'body'>; values?: Record<string, string> };
-
-function record(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
 
 export function readSnapshot(raw: string): ShareSnapshot {
-  if (new TextEncoder().encode(raw).length > SHARE_FILE_LIMIT) throw new Error(shareRecovery);
-  const value: unknown = JSON.parse(raw);
-  if (!record(value) || value.format !== 'promptroom-share' || value.version !== 1 || !record(value.template)) throw new Error(shareRecovery);
+  if (new TextEncoder().encode(raw).length > SHARE_FILE_LIMIT) throw new DataFailure('OversizedData');
+  const value = decodeContract(SnapshotSchema, parseJson(raw), true);
   const { title, description, body } = value.template;
-  if (typeof title !== 'string' || !title.trim() || typeof description !== 'string' || typeof body !== 'string' || !body.trim()) throw new Error(shareRecovery);
+  if (!title.trim() || !body.trim()) throw new DataFailure();
   const snapshot: ShareSnapshot = { format: 'promptroom-share', version: 1, template: { title, description, body } };
   if (value.values !== undefined) {
-    if (!record(value.values)) throw new Error(shareRecovery);
     const variables = renderPrompt(body, {}).variables;
-    if (Object.entries(value.values).some(([key, item]) => !variables.includes(key) || typeof item !== 'string')) throw new Error(shareRecovery);
+    if (Object.keys(value.values).some(key => !variables.includes(key))) throw new DataFailure();
     snapshot.values = Object.fromEntries(Object.entries(value.values)) as Record<string, string>;
   }
   return snapshot;
@@ -45,8 +41,11 @@ export function readShareLink(link: string): ShareSnapshot | null {
   const url = new URL(link);
   const hash = url.hash.slice(1);
   if (!hash.startsWith('share=')) return null;
-  if (url.href.length > SHARE_URL_LIMIT) throw new Error(shareRecovery);
-  return readSnapshot(decodeURIComponent(hash.slice(6)));
+  if (url.href.length > SHARE_URL_LIMIT) throw new DataFailure('OversizedData');
+  let raw: string;
+  try { raw = decodeURIComponent(hash.slice(6)); }
+  catch (error) { if (error instanceof URIError) throw new DataFailure(); throw error; }
+  return readSnapshot(raw);
 }
 
 export function exportPrompt(template: PromptTemplate): string {

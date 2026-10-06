@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { Download, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -6,6 +6,8 @@ import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/c
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { exportBackup, planImport, readBackup, templateLabel, type ImportPlan } from '@/lib/backup';
+import { downloadText, readFile, LatestOperation } from '@/lib/browser';
+import { runBoundarySync } from '@/lib/boundary';
 import type { Workspace, WorkspaceStore } from '@/lib/workspace';
 
 type Props = { workspace: Workspace; store: WorkspaceStore | null; onImported: (workspace: Workspace) => void };
@@ -17,12 +19,15 @@ export default function BackupControls({ workspace, store, onImported }: Props) 
   const [status, setStatus] = useState('');
   const [review, setReview] = useState<{ base: Workspace; plan: ImportPlan } | null>(null);
   const generation = useRef(0);
+  const operations = useRef(new LatestOperation());
+  useEffect(() => () => { generation.current++; operations.current.cancel(); }, []);
+  useEffect(() => { generation.current++; operations.current.cancel(); setReading(false); }, [workspace]);
   const latest = useRef({ workspace, store });
   latest.current = { workspace, store };
   const stale = review !== null && review.base !== workspace;
 
   function changeOpen(next: boolean) {
-    generation.current++;
+    generation.current++; operations.current.cancel();
     setOpen(next);
     setReview(null);
     setReading(false);
@@ -31,14 +36,8 @@ export default function BackupControls({ workspace, store, onImported }: Props) 
 
   function download() {
     try {
-      const url = URL.createObjectURL(new Blob([exportBackup(workspace)], { type: 'application/json' }));
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `promptroom-backup-${new Date().toISOString().slice(0, 10)}.json`;
-      document.body.append(link);
-      link.click();
-      link.remove();
-      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      const outcome = runBoundarySync(downloadText(exportBackup(workspace), `promptroom-backup-${new Date().toISOString().slice(0, 10)}.json`));
+      if (outcome._tag !== 'Success') throw new Error('Download failed');
       setStatus('Backup download requested. Keep the JSON file somewhere safe.');
     } catch {
       setStatus('The backup could not be downloaded. Your workspace is unchanged. Try again.');
@@ -50,10 +49,13 @@ export default function BackupControls({ workspace, store, onImported }: Props) 
     const attempt = ++generation.current;
     setReview(null);
     setError('');
-    if (!file) { setReading(false); return; }
+    if (!file) { operations.current.cancel(); setReading(false); return; }
     setReading(true);
     try {
-      const incoming = readBackup(await file.text());
+      const outcome = await operations.current.run(readFile(file));
+      if (outcome._tag === 'Cancelled') return;
+      if (outcome._tag !== 'Success') throw new Error('File read failed');
+      const incoming = readBackup(outcome.value);
       if (attempt !== generation.current) return;
       const current = latest.current;
       setReview({ base: current.workspace, plan: planImport(current.workspace, incoming, current.store?.canRestorePreferences) });

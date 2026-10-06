@@ -2,6 +2,10 @@ import { expect, test } from 'vitest';
 import { t3Handoff, readT3Options } from './t3';
 import { newWorkspace, WorkspaceStore } from './workspace';
 
+test('unrecognized T3 fields including version are excluded while false settings stay exact', () => {
+  expect(readT3Options({ version: 99, text: 'synthetic unknown field', temporary: false, search: false, profile: ' \nWork 🐱\r\n ' })).toEqual({ temporary: false, search: false, profile: ' \nWork 🐱\r\n ' });
+});
+
 test('T3 receives the complete Unicode prompt and all six URL options', () => {
   const prompt = 'Line one & two?\n你好 + café # {{literal}}';
   const handoff = t3Handoff(prompt, { model: 'claude-4.6-sonnet', effort: 'high', search: true, search_limit: 3, profile: 'Work profile', temporary: true });
