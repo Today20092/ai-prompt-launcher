@@ -129,3 +129,17 @@ test('native sharing begins synchronously and closing its dialog suppresses late
   fireEvent.click(screen.getByRole('button', { name: 'Share' }));
   expect(screen.queryByText('Link handed to the device share menu.')).toBeNull();
 });
+
+test('selecting an invalid file supersedes copying and leaves copy actions usable', async () => {
+  const pending = deferred<void>();
+  Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: () => pending.promise } });
+  render(<ShareControls template={newWorkspace().templates[0]} values={{}} onReceived={vi.fn()} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Share' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Copy template' }));
+  fireEvent.click(screen.getByText('Transfer a template file'));
+  choose('Open single-prompt JSON', Promise.resolve('invalid synthetic JSON'));
+  await screen.findByText(/This shared prompt is invalid/);
+  expect((screen.getByRole('button', { name: 'Copy template' }) as HTMLButtonElement).disabled).toBe(false);
+  await act(async () => pending.resolve());
+  expect(screen.queryByText('Unfilled template copied.')).toBeNull();
+});

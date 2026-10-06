@@ -68,7 +68,7 @@ Schema/Effect sources were consulted for v4 APIs; v3 generator and mutability AP
 must not be copied into future changes.
 
 Measured production `_astro/*.js` total (all three minified shipped chunks,
-uncompressed): before 398,562 bytes; after 477,064 bytes. Increase: 78,502 bytes
+uncompressed): before 398,562 bytes; after 477,114 bytes. Increase: 78,552 bytes
 (19.7%). This is the validation/effect runtime cost for these boundaries, not a
 provider or transfer-size guarantee. The app still builds static assets only.
 
@@ -76,7 +76,7 @@ Locked install, focused behavior tests and typechecking passed. Both root and
 `/ai-prompt-launcher` base-path builds passed and staged the original launcher at
 `legacy/`. The deploy workflow, legacy sources and redirects were not changed.
 Final locked install passed; `pnpm check` reported zero errors/warnings/hints;
-`pnpm test` passed 39 tests in 7 files. Both production builds passed. Pages
+`pnpm test` passed 40 tests in 7 files. Both production builds passed. Pages
 asset references include `/ai-prompt-launcher/`. Staged legacy HTML/CSS hashes
 match their repository sources. DOM integration tests use project-local
 `@testing-library/react` and `jsdom` dev dependencies, which do not ship to users.
@@ -90,9 +90,45 @@ actual event handlers for cancelled/superseded reads, stale import review, repea
 clicks, disposal, native sharing and provider fallback. Tests assert observable
 behavior, without coupling to Effect internals or component markup.
 
-Interactive browser verification is **blocked**: the computer-use inventory in this
-execution environment returns no browsers or apps. Desktop/mobile save/reload,
-backup review/apply/cancel, temporary receipt/save and permission/popup UI checks
-remain unverified. Adapter tests cover synthetic failure/ordering/cancellation;
-they do not establish physical-device sharing or signed-in T3 delivery. Existing
-#6/#7/#9 verification work remains open. Nothing has been pushed or deployed.
+Both review axes re-reviewed the fixes and reported no remaining code findings.
+A final red/green regression corrected the copy busy state when invalid file
+selection supersedes a pending copy. It also proves late copying cannot publish
+success after file selection.
+
+## Actual browser verification
+
+The computer-use inventory initially returned no browsers/apps. The user authorized
+an alternate installed browser route. Everything's local index located the bundled
+Playwright 1.62.1 installation and installed Chromium revision 1234; no new browser
+or global package was installed. The optional `personal-ui/scripts/verify-browser.cjs`
+uses `PLAYWRIGHT_MODULE` to select an existing installation, `PROMPTROOM_URL` for
+the local server and `BROWSER_EVIDENCE_DIR` for artifacts. It defaults to a normal
+`playwright` module if one is already available.
+
+Synthetic browser checks passed at 1440×1000 and 390×844 on both the local-root dev
+server and production Pages-base build served by Astro preview:
+
+- Create/save/reload restores reusable definitions and excludes session input.
+- Actual backup download, validation/review, Cancel and explicit Apply work.
+- Sharing defaults to template-only; opt-in preview retains exact selected values.
+- Opening a share link is temporary; saving creates an independent identity,
+  excludes received input and preserves selection/preferences.
+- Chromium's actual clipboard permission was set to denied in the isolated test
+  context and verified via Permissions API. Manual full-text fallback works.
+- An actual fallback popup opens and closes when clipboard access is denied.
+- Controlled `window.open = () => null` verifies popup-block guidance. This is a
+  controlled capability test, **not** evidence of a naturally blocked popup policy.
+- Both widths have no horizontal page overflow; screenshots were visually checked.
+  Browser runs reported no page errors.
+- Production legacy redirect preserves query/hash and loads the staged legacy
+  document. Use `VERIFY_LEGACY=1` when checking a build that stages `legacy/`.
+
+All browser profiles were isolated. External provider requests were intercepted;
+no account login or signed-in T3 delivery was tested. Headless mobile-width Chromium
+is not a physical mobile device. Native device sharing, actual provider delivery,
+Safari/Firefox and physical-device checks remain unverified. Existing #6/#7/#9
+verification work remains open. Nothing has been pushed or deployed.
+
+Local supporting artifacts (outside Git) are in sibling `.scratch/` directories
+`promptroom-effect4-browser-evidence` and `promptroom-effect4-pages-browser-evidence`,
+each containing `results.json`, `desktop.png` and `mobile.png`.

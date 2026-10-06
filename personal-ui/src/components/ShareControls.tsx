@@ -108,7 +108,8 @@ export default function ShareControls({ template, values, onReceived }: Props) {
       <Field><FieldLabel htmlFor="single-prompt-file">Open single-prompt JSON</FieldLabel><Input id="single-prompt-file" type="file" accept=".json,application/json" onChange={async event => {
         const file = event.target.files?.[0]; const attempt = ++generation.current;
         operations.current.cancel();
-        if (!file) return;
+        if (!file) { setBusy(false); return; }
+        setBusy(true);
         try {
           const outcome = await operations.current.run(readFile(file, SHARE_FILE_LIMIT));
           if (outcome._tag === 'Cancelled') return;
@@ -117,6 +118,7 @@ export default function ShareControls({ template, values, onReceived }: Props) {
           if (attempt !== generation.current) return;
           onReceived(incoming); changeOpen(false);
         } catch { if (attempt === generation.current) setStatus(shareRecovery); }
+        finally { if (attempt === generation.current) setBusy(false); }
       }} /></Field>
         </div>
       </details>
