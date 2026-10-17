@@ -15,11 +15,13 @@ import { t3Handoff, type T3Options } from '@/lib/t3';
 import BackupControls from '@/components/BackupControls';
 import { templateLabel } from '@/lib/backup';
 import ShareControls from '@/components/ShareControls';
+import AccountLibrary from '@/components/AccountLibrary';
 import { readShareLink, saveReceivedCopy, shareRecovery, type ShareSnapshot } from '@/lib/sharing';
 
 import { beginClipboard, beginProviderLaunch, clipboardBrowser, providerBrowser, LatestOperation } from '@/lib/browser';
 
 const variableLabel = (name: string) => name === 'text' ? 'Your text' : name.replace(/[_-]/g, ' ');
+const accountPreviewEnabled = import.meta.env.PUBLIC_ACCOUNT_PREVIEW === 'true';
 
 export default function Workbench() {
   const operations = useRef(new LatestOperation());
@@ -40,12 +42,12 @@ export default function Workbench() {
   const [manualCopy, setManualCopy] = useState(false);
   const [editing, setEditing] = useState(false);
   const [preferencesOpen, setPreferencesOpen] = useState(false);
+  const [accountView, setAccountView] = useState<'account' | 'explore' | null>(null);
   const [creating, setCreating] = useState(false);
   const [draft, setDraft] = useState({ title: '', description: '', body: '' });
   const [saveAttempted, setSaveAttempted] = useState(false);
   const opener = useRef<HTMLButtonElement | null>(null);
   const fields = useRef<Record<string, HTMLTextAreaElement | null>>({});
-  const preview = useRef<HTMLDetailsElement>(null);
   const previewText = useRef<HTMLPreElement>(null);
   const template = received ?? templates.find(item => item.id === selected) ?? templates[0];
   const values = inputs[template.id] ?? {};
@@ -159,7 +161,6 @@ export default function Workbench() {
 
   function showManualCopy() {
     setManualCopy(true);
-    if (preview.current) preview.current.open = true;
     previewText.current?.focus();
     setStatus('Clipboard access failed. Select and copy the complete prompt below, then open your chat app.');
   }
@@ -202,6 +203,8 @@ export default function Workbench() {
     <header className="app-header">
       <a href="#workspace" className="brand"><Sparkles aria-hidden="true" />Promptroom</a>
       <div className="header-actions">
+        {accountPreviewEnabled && <><Button variant="ghost" disabled={!ready} onClick={event=>{opener.current=event.currentTarget;setAccountView('explore');}}>Explore</Button>
+        <Button variant="ghost" disabled={!ready} onClick={event=>{opener.current=event.currentTarget;setAccountView('account');}}>Account prompts</Button></>}
         <Button variant="ghost" size="icon" disabled={!ready} aria-label="Preferences" onClick={event => { opener.current = event.currentTarget; setPreferencesOpen(true); }}><Settings2 /></Button>
         <Button variant="ghost" size="icon" aria-label={dark ? 'Use light theme' : 'Use dark theme'} onClick={toggleTheme}>{dark ? <Sun /> : <Moon />}</Button>
         <Button variant="outline" disabled={!ready} onClick={event => openEditor(event, true)}><Plus data-icon="inline-start" />New prompt</Button>
@@ -236,6 +239,20 @@ export default function Workbench() {
             <Button variant="ghost" size="icon" aria-label="Edit template" onClick={event => openEditor(event)}><Pencil /></Button>
           </div>
         </div>
+        <div className="content-toolbar">
+          <h2>Content</h2>
+          <Field className="app-picker"><FieldLabel htmlFor="chat-app">Chat app</FieldLabel>
+            <Select value={template.chatApp ?? 'preferred'} onValueChange={name => { changeTemplate({ ...template, chatApp: name === 'preferred' ? undefined : name as AppName }); setStatus(''); setManualCopy(false); }}><SelectTrigger id="chat-app"><SelectValue /></SelectTrigger>
+              <SelectContent><SelectGroup><SelectItem value="preferred">Use preferred ({workspace.preferredApp})</SelectItem>{chatApps.map(item => <SelectItem key={item.name} value={item.name}>{item.name}</SelectItem>)}</SelectGroup></SelectContent>
+            </Select>
+          </Field>
+          <div className="launch-actions">
+            <Button variant="outline" disabled={busy} onClick={copyPrompt}><Copy data-icon="inline-start" />Copy prompt</Button>
+            <Button disabled={busy} onClick={launchPrompt}>{directT3 ? 'Send to T3 Chat' : `Open in ${app.name}`}<ArrowUpRight data-icon="inline-end" /></Button>
+          </div>
+        </div>
+        <section className="variables-panel" aria-labelledby="variables-title">
+        <h2 id="variables-title">Variables <Badge variant="secondary">{rendered.variables.length}</Badge></h2>
         <FieldGroup className="variable-fields">
           {rendered.variables.map((name, index) => {
             const invalid = attempted && rendered.missing.includes(name);
@@ -250,16 +267,12 @@ export default function Workbench() {
           })}
         </FieldGroup>
         <div className="entry-meta">{!rendered.variables.length && <span>This template has no variables. It is ready to use.</span>}<span>{rendered.text.length.toLocaleString()} characters in prompt</span></div>
+        </section>
+        <section className="preview" aria-label="Prompt preview">
+          <h2 id="complete-prompt-title">Complete prompt</h2>
+          <pre ref={previewText} tabIndex={0} aria-label="Complete prompt">{rendered.text}</pre>
+        </section>
         <div className="launch-panel">
-          <Field className="app-picker"><FieldLabel htmlFor="chat-app">Chat app</FieldLabel>
-              <Select value={template.chatApp ?? 'preferred'} onValueChange={name => { changeTemplate({ ...template, chatApp: name === 'preferred' ? undefined : name as AppName }); setStatus(''); setManualCopy(false); }}><SelectTrigger id="chat-app"><SelectValue /></SelectTrigger>
-              <SelectContent><SelectGroup><SelectItem value="preferred">Use preferred ({workspace.preferredApp})</SelectItem>{chatApps.map(item => <SelectItem key={item.name} value={item.name}>{item.name}</SelectItem>)}</SelectGroup></SelectContent>
-            </Select>
-          </Field>
-          <div className="launch-actions">
-            <Button disabled={busy} onClick={launchPrompt}>{directT3 ? 'Send to T3 Chat' : `Open in ${app.name}`}<ArrowUpRight data-icon="inline-end" /></Button>
-            <Button variant="outline" disabled={busy} onClick={copyPrompt}><Copy data-icon="inline-start" />Copy prompt</Button>
-          </div>
           {app.name === 'T3 Chat' && <details key={template.id} className="t3-options">
             <summary><span>T3 Chat options</span><span className="muted">Saved for this prompt</span></summary>
             <div className="t3-options-body">
@@ -280,15 +293,17 @@ export default function Workbench() {
           <p role="status" className="action-status">{status}</p>
           {manualCopy && <a className="manual-link" href={directT3 ? handoff?.url : app.url} target="_blank" rel="noopener noreferrer">{directT3 ? 'Send to T3 Chat manually' : `Open ${app.name} manually`}<ArrowUpRight aria-hidden="true" /></a>}
         </div>
-        <details ref={preview} className="preview">
-          <summary><span>Preview complete prompt</span><Badge variant="secondary">{rendered.variables.length} {rendered.variables.length === 1 ? 'variable' : 'variables'}</Badge></summary>
-          <pre ref={previewText} tabIndex={0} aria-label="Complete prompt">{rendered.text}</pre>
-        </details>
         <p className="mobile-session-note">Prompts and their chat apps stay in this browser. Pasted input stays temporary.</p>
           <p className="storage-note">Saved only on this device and browser. Clearing site data removes your saved workspace.</p>
         {savingStatus && <div className="storage-status" role="status"><p>{savingStatus}</p><Button variant="outline" onClick={() => persist(workspace)}>Retry saving</Button></div>}
       </section>
     </main>
+    {accountPreviewEnabled && accountView && <Dialog open onOpenChange={open=>{if(!open) setAccountView(null);}}>
+      <DialogContent className="template-dialog" onCloseAutoFocus={event=>{event.preventDefault();opener.current?.focus();}}>
+        <DialogHeader><DialogTitle>{accountView === 'explore' ? 'Explore community prompts' : 'Your account prompts'}</DialogTitle><DialogDescription>{accountView === 'explore' ? 'Only approved prompts appear here.' : 'Sign in to save private template copies and open them on another device.'}</DialogDescription></DialogHeader>
+        <AccountLibrary explore={accountView === 'explore'} template={template} onOpen={snapshot=>{receive(snapshot);setAccountView(null);}} onSignOut={()=>{setReceived(null);setReceivedStatus('');}} />
+      </DialogContent>
+    </Dialog>}
     <Dialog open={editing} onOpenChange={setEditing}>
       <DialogContent className="template-dialog" onCloseAutoFocus={event => { event.preventDefault(); opener.current?.focus(); }}>
         <DialogHeader><DialogTitle>{creating ? 'New reusable prompt' : 'Edit template'}</DialogTitle>
