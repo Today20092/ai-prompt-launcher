@@ -16,6 +16,8 @@ pnpm dev:cloud
 
 `build:cloud` enables the account UI with `PUBLIC_CLOUD=true` and serves Astro's static output at `/`. The existing `build` command retains GitHub Pages staging. `/api/*` and `/p/*` run through the Worker; other assets bypass it. The Worker has no setup/test-login endpoints and never creates schema on requests. Tests use ephemeral local D1 and synthetic signed sessions inside the test harness; they exercise the shipped Worker HTTP seam, not a production sign-in bypass.
 
+The compatibility date stays at the prototype's tested `2026-10-04` because the pinned Wrangler/workerd runtime is older than today's date. Advance it only with a matching runtime update and a repeat of the Worker HTTP checks.
+
 Sign-in stays unavailable until configuration is complete. Local guest editing remains usable. For optional real localhost OAuth, put `AUTH_SECRET`, `GOOGLE_CLIENT_ID`, and `GOOGLE_CLIENT_SECRET` in ignored `.dev.vars` and use the exact `http://localhost:8787/api/auth/callback/google` callback. Never commit that file or copy another worktree's secrets/state.
 
 ## External setup gates — not performed
