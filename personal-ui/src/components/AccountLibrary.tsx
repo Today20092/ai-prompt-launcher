@@ -39,11 +39,24 @@ class ApiError extends Error {
     super(message);
   }
 }
-async function api(path: string, data?: unknown, method = data === undefined ? 'GET' : 'POST') {
+async function requestApi(
+  path: string,
+  data?: unknown,
+  method = data === undefined ? 'GET' : 'POST',
+  expectedOwner?: string | null,
+) {
+  const authenticated =
+    (!path.startsWith('/api/auth/') &&
+      !path.startsWith('/api/library') &&
+      path !== '/api/config') ||
+    path === '/api/auth/sign-out';
   const response = await fetch(path, {
     method,
     credentials: 'same-origin',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(authenticated && expectedOwner ? { 'X-Promptroom-Owner': expectedOwner } : {}),
+    },
     body: data === undefined ? undefined : JSON.stringify(data),
     signal: AbortSignal.timeout(15000),
   });
@@ -96,6 +109,8 @@ export default function AccountLibrary({
     owner = useRef<string | null>(null),
     associationRef = useRef(association);
   associationRef.current = association;
+  const api = (path: string, data?: unknown, method?: string) =>
+    requestApi(path, data, method, owner.current);
   const current = (ticket: number) => alive.current && ticket === epoch.current;
   function clearIdentity() {
     owner.current = null;
@@ -148,6 +163,9 @@ export default function AccountLibrary({
     alive.current = true;
     const ticket = ++epoch.current;
     setBusy(true);
+    setRows([]);
+    setPending([]);
+    setModerator(false);
     void (async () => {
       try {
         const config = await api('/api/config');
@@ -156,8 +174,13 @@ export default function AccountLibrary({
         await load(ticket);
         if (current(ticket)) setStatus('');
       } catch (error) {
-        if (current(ticket))
+        if (current(ticket)) {
+          if (error instanceof ApiError && error.status === 401) {
+            clearIdentity();
+            onSignOut();
+          }
           setStatus(error instanceof Error ? error.message : 'Account service unavailable.');
+        }
       } finally {
         if (current(ticket)) setBusy(false);
       }
