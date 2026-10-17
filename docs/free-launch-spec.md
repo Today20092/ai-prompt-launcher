@@ -41,5 +41,10 @@ Use existing AccountLibrary component behavior seam and Worker HTTP API seam (pe
 
 ## Status
 
-- T0: captured; backend/UI implementation pending.
+- T0: approved editor captured.
+- T1: Worker/D1 backend, OAuth-only configuration, migrations and free-hosting packaging complete.
+- T2: private cloud update/delete/conflict recovery, Explore, file submissions and moderation UI complete.
+- T3: merged checks, browser guest-state inspection and deployment handoff complete. Real OAuth, phone sync and Free CPU acceptance remain external deployment gates.
+- T4: Standards review found no actionable issues; Spec review's account-switch race fixed with same-request expected-owner enforcement and regression checks. Reviewer confirmed resolution.
+- Tracked by GitHub issue #13 and PR #12. Existing #6/#7/#9 verification remains separate.
 - No paid or external resources provisioned. No production migration authorized by this document alone.
