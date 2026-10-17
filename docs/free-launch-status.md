@@ -21,10 +21,16 @@ Branch: `integration/promptroom-free`, based on remote main `40c2250`.
 - Captured the approved layout and newer account UI without changing their original dirty worktree.
 - Retained Effect already merged on main; no second refactor.
 - Task graph and contracts: [free-launch-spec.md](free-launch-spec.md).
-- GitHub issue creation returned HTTP 403 (`Resource not accessible by integration`). The local task graph remains the implementation record until tracker write access works. Do not mark unrelated verification issues closed.
+- GitHub connector writes returned HTTP 403 (`Resource not accessible by integration`). Existing Git repository credentials allowed creating [draft PR #12](https://github.com/Today20092/ai-prompt-launcher/pull/12) through the GitHub API. The local task graph records implementation progress. Do not mark unrelated verification issues closed.
 
 ## Validation
 
 Before implementation: locked install succeeded; all 43 existing tests passed; Astro check had zero errors, warnings and hints. Windows command resolution required invoking the installed Node executable directly rather than the stale shell Node path.
 
-Implementation and final checks are in progress. No production services have been provisioned or deployed, and no real account credentials have been entered.
+Merged implementation checks: 49 component/domain tests pass; Astro check reports zero errors, warnings and hints; cloud build and Worker dry packaging pass (335.88 KiB gzip); two Worker HTTP tests pass against real local D1, including ownership, revision conflicts, moderation and input bounds. These checks use synthetic sessions, not Google login.
+
+Browser inspection: local integrated Worker at `http://localhost:8787/`, desktop and 390px phone width. Account dialog explains missing Google configuration; Explore search and empty state work. The phone viewport had no horizontal document overflow. No real account was used. Authenticated control behavior is covered by component tests and the local HTTP suite, not a signed-in browser journey.
+
+Standards review found no actionable issues. Spec review found an account-switch race between the UI session preflight and mutation. A server-validated expected-account header and regressions are being added before release.
+
+No production services have been provisioned or deployed, and no real account credentials have been entered.
