@@ -1,6 +1,8 @@
 # AI prompt launcher roadmap
 
-Planning draft. No milestone below is claimed to be implemented in this new repository.
+Current direction: personal prompts first, accounts and cloud saves next, then a separate Explore library and moderated contributions. Hosting must stay **$0**: Workers Free with Static Assets, D1 Free and a free workers.dev address. The existing GitHub Pages site stays live until migration is reviewed.
+
+See the [current roadmap summary](ROADMAP-SUMMARY.md), [free-launch specification](docs/free-launch-spec.md) and [implementation status](docs/free-launch-status.md). The sections below preserve the original planning draft; they are not the current implementation checklist.
 
 ## 1. Publish the standalone foundation
 
