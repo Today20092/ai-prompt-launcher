@@ -6,6 +6,8 @@ Write a prompt, fill its variables, and open it in an AI chatbot. Free and open 
 
 The main URL opens Promptroom, the personal workbench in `personal-ui/`. It includes reusable prompt editing, multiline variables, complete preview, local saving and JSON backups. See [the workbench guide](personal-ui/README.md) for development and storage details. The [original launcher](https://today20092.github.io/ai-prompt-launcher/legacy/) remains available with its existing templates and share-link behavior. The feature list below describes that original launcher.
 
+The cloud integration adds Google sign-in, explicit private cloud saves, Explore and reviewed submissions. It targets Workers Free + D1 Free; it is not deployed by the GitHub Pages workflow. See [deployment setup](personal-ui/DEPLOYMENT.md) and [implementation status](docs/free-launch-status.md) for configuration and remaining launch checks.
+
 This standalone project was extracted from [LLM-Made-Sites](https://github.com/Today20092/LLM-Made-Sites/tree/main/prompt-launcher).
 
 ## Available today
