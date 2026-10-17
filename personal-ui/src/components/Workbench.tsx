@@ -15,13 +15,13 @@ import { t3Handoff, type T3Options } from '@/lib/t3';
 import BackupControls from '@/components/BackupControls';
 import { templateLabel } from '@/lib/backup';
 import ShareControls from '@/components/ShareControls';
-import AccountLibrary from '@/components/AccountLibrary';
+import AccountLibrary, { readAccountPrompts, type AccountAssociation } from '@/components/AccountLibrary';
 import { readShareLink, saveReceivedCopy, shareRecovery, type ShareSnapshot } from '@/lib/sharing';
 
 import { beginClipboard, beginProviderLaunch, clipboardBrowser, providerBrowser, LatestOperation } from '@/lib/browser';
 
 const variableLabel = (name: string) => name === 'text' ? 'Your text' : name.replace(/[_-]/g, ' ');
-const accountPreviewEnabled = import.meta.env.PUBLIC_ACCOUNT_PREVIEW === 'true';
+const accountPreviewEnabled = import.meta.env.PUBLIC_CLOUD === 'true' || import.meta.env.PUBLIC_ACCOUNT_PREVIEW === 'true';
 
 export default function Workbench() {
   const operations = useRef(new LatestOperation());
@@ -29,6 +29,7 @@ export default function Workbench() {
   useEffect(() => () => { generation.current++; operations.current.cancel(); }, []);
   const [workspace, setWorkspace] = useState(newWorkspace);
   const [received, setReceived] = useState<PromptTemplate | null>(null);
+  const [accountAssociation, setAccountAssociation] = useState<AccountAssociation | null>(null);
   const [receivedStatus, setReceivedStatus] = useState('');
   const { templates, lastUsedPrompt: selected } = workspace;
   const store = useRef<WorkspaceStore | null>(null);
@@ -81,7 +82,23 @@ export default function Workbench() {
     setReady(true);
   }, []);
 
-  function receive(snapshot: ShareSnapshot) {
+  useEffect(() => {
+    if (!ready) return;
+    let ignore = false;
+    const community = new URL(window.location.href).searchParams.get('community');
+    if (accountPreviewEnabled && community) {
+      const ticket = generation.current;
+      void fetch('/api/library/'+encodeURIComponent(community), { signal: AbortSignal.timeout(15000) }).then(async response => {
+        if (!response.ok) throw new Error('This community prompt is unavailable.');
+        const row = readAccountPrompts([await response.json()])[0];
+        if (!ignore && generation.current === ticket) receive({format:'promptroom-share',version:1,template:{title:row.title,description:row.description,body:row.body}});
+      }).catch(error => { if (!ignore && generation.current === ticket) setReceivedStatus(error instanceof Error ? error.message : 'This community prompt is unavailable.'); });
+    }
+    return () => { ignore = true; };
+  }, [ready]);
+
+  function receive(snapshot: ShareSnapshot, association?: AccountAssociation) {
+    setAccountAssociation(association ?? null);
     const temporary = { ...snapshot.template, id: crypto.randomUUID() };
     setReceived(temporary);
     setInputs(old => ({ ...old, [temporary.id]: snapshot.values ?? {} }));
@@ -112,6 +129,7 @@ export default function Workbench() {
   }
 
   function switchTemplate(id: string) {
+    setAccountAssociation(null);
     setReceived(null); setReceivedStatus('');
     persist({ ...workspace, lastUsedPrompt: id });
     setAttempted(false);
@@ -143,7 +161,7 @@ export default function Workbench() {
       id: creating ? crypto.randomUUID() : template.id,
       title: received && !creating ? draft.title : draft.title.trim(), description: received && !creating ? draft.description : draft.description.trim(), body: draft.body,
     };
-    if (creating) { setReceived(null); setReceivedStatus(''); persist(updateTemplate(workspace, next)); }
+    if (creating) { setAccountAssociation(null); setReceived(null); setReceivedStatus(''); persist(updateTemplate(workspace, next)); }
     else changeTemplate(next);
     setAttempted(false);
     setManualCopy(false);
@@ -223,7 +241,7 @@ export default function Workbench() {
         <p className="session-note">Prompts and their chat apps stay in this browser. Pasted input stays temporary.</p>
       </aside>
       <section id="workspace" className="workspace" aria-labelledby="prompt-title" tabIndex={-1}>
-        {receivedStatus && <div className="storage-status" role="status"><p>{receivedStatus}</p>{received && <Button variant="outline" onClick={saveCopy}>Save a copy</Button>}<Button variant="ghost" onClick={() => { setReceived(null); setReceivedStatus(''); setStatus(''); setManualCopy(false); }}>Return to saved workspace</Button></div>}
+        {receivedStatus && <div className="storage-status" role="status"><p>{receivedStatus}</p>{received && <Button variant="outline" onClick={saveCopy}>Save a copy</Button>}<Button variant="ghost" onClick={() => { setAccountAssociation(null); setReceived(null); setReceivedStatus(''); setStatus(''); setManualCopy(false); }}>Return to saved workspace</Button></div>}
         <div className="mobile-picker">
           <Field><FieldLabel htmlFor="prompt-picker">Your prompts</FieldLabel>
             <Select value={received ? '' : selected} onValueChange={switchTemplate}><SelectTrigger id="prompt-picker"><SelectValue placeholder="Temporary received prompt" /></SelectTrigger>
@@ -301,7 +319,7 @@ export default function Workbench() {
     {accountPreviewEnabled && accountView && <Dialog open onOpenChange={open=>{if(!open) setAccountView(null);}}>
       <DialogContent className="template-dialog" onCloseAutoFocus={event=>{event.preventDefault();opener.current?.focus();}}>
         <DialogHeader><DialogTitle>{accountView === 'explore' ? 'Explore community prompts' : 'Your account prompts'}</DialogTitle><DialogDescription>{accountView === 'explore' ? 'Only approved prompts appear here.' : 'Sign in to save private template copies and open them on another device.'}</DialogDescription></DialogHeader>
-        <AccountLibrary explore={accountView === 'explore'} template={template} onOpen={snapshot=>{receive(snapshot);setAccountView(null);}} onSignOut={()=>{setReceived(null);setReceivedStatus('');}} />
+        <AccountLibrary explore={accountView === 'explore'} template={template} association={accountAssociation} onAssociation={setAccountAssociation} onOpen={(snapshot,association)=>{receive(snapshot,association);setAccountView(null);}} onSignOut={()=>{setAccountAssociation(null);setReceived(null);setReceivedStatus('');}} />
       </DialogContent>
     </Dialog>}
     <Dialog open={editing} onOpenChange={setEditing}>
@@ -339,7 +357,7 @@ export default function Workbench() {
           </Select>
           <FieldDescription>T3 Chat is the default. Choose another app here, or override it for an individual prompt.</FieldDescription>
         </Field>
-        <BackupControls workspace={workspace} store={store.current} onImported={next => { setWorkspace(next); setSavingStatus(''); setAttempted(false); setManualCopy(false); setStatus(''); }} />
+        <BackupControls workspace={workspace} store={store.current} onImported={next => { setAccountAssociation(null); setWorkspace(next); setSavingStatus(''); setAttempted(false); setManualCopy(false); setStatus(''); }} />
         <DialogFooter><Button onClick={() => setPreferencesOpen(false)}>Done</Button></DialogFooter>
       </DialogContent>
     </Dialog>
