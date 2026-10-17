@@ -4,6 +4,9 @@ const json = (data, status = 200) => Response.json(data, {status, headers:{'Cach
 const fail = (status, message) => { throw Object.assign(new Error(message), {status}); };
 const fields = 'id,title,description,body,status,revision';
 const enabled = env => Boolean(env.AUTH_SECRET && env.AUTH_BASE_URL && env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET);
+function expectedOwner(request, owner) {
+  if (!owner || request.headers.get('X-Promptroom-Owner') !== owner) fail(401,'Account changed. Sign in again.');
+}
 const escape = value => value.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function auth(env) {
   return betterAuth({database:env.DB,secret:env.AUTH_SECRET,baseURL:env.AUTH_BASE_URL,trustedOrigins:[env.AUTH_BASE_URL],
@@ -45,6 +48,7 @@ async function handle(request, env) {
   if (path === '/api/config' && method === 'GET') return json({googleEnabled:enabled(env)});
   if (path.startsWith('/api/auth/')) {
     if (!enabled(env)) return path === '/api/auth/get-session' && method === 'GET' ? json(null) : json({error:'Sign-in is not configured'},503);
+    if (path === '/api/auth/sign-out' && method === 'POST') expectedOwner(request,(await auth(env).api.getSession({headers:request.headers}))?.user.id);
     if (method === 'POST') request = new Request(request,{body:JSON.stringify(await body(request))});
     const response = await auth(env).handler(request);
     const headers = new Headers(response.headers); headers.set('Cache-Control','no-store');
@@ -64,6 +68,7 @@ async function handle(request, env) {
   const session = enabled(env) ? await auth(env).api.getSession({headers:request.headers}) : null;
   const owner = session?.user.id;
   if (!owner) fail(401,'Sign in required');
+  expectedOwner(request,owner);
   if (path === '/api/prompts') {
     if (method === 'GET') return json((await env.DB.prepare(`SELECT ${fields} FROM prompts WHERE owner=? ORDER BY created DESC,id LIMIT 100`).bind(owner).all()).results);
     if (method === 'POST') {

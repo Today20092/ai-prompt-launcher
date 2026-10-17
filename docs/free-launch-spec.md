@@ -20,6 +20,8 @@ Own `personal-ui/server/*`, migrations, Worker config, dependencies/lockfile, de
 
 API JSON, `Cache-Control: no-store` on private/errors. Auth endpoints `/api/auth/*`; Google OAuth only, configured base URL/trusted origin and secure production cookies. All app mutations require matching Origin. Bounded UTF-8 JSON, parameterized SQL, owner predicates, indexed and bounded lists, sanitized errors. Never log prompts/tokens.
 
+Authenticated app reads/mutations and sign-out also require `X-Promptroom-Owner` equal to the authenticated session's user ID. Mismatches/missing expected owner return 401 before private data access or writes, binding actions atomically to the account shown by the client even if another tab switches cookies. Public library/config/session/OAuth routes do not require this header.
+
 - GET `/api/config`: `{googleEnabled:boolean}`. GET `/api/auth/get-session`: Better Auth session or null.
 - GET `/api/prompts`: owner's rows `{id,title,description,body,status,revision}` (array). POST `/api/prompts`: `{title,description,body,status:'private'|'pending'}` returns full row, 201. No values/preferences.
 - PUT `/api/prompts/:id`: `{title,description,body,revision}` edits private row with atomic revision precondition; return full row, 409 if stale, 404 if inaccessible. DELETE same URL with `{revision}`: private owner delete only; stale 409. Published/pending rows immutable; revisions are new submissions and approval keeps previous version unchanged.

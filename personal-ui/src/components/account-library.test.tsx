@@ -45,12 +45,62 @@ test('an account changed in another tab cannot receive the previous account draf
   await waitFor(() => expect(screen.getByText('Signed in as second@example.invalid')).toBeTruthy());
   expect(writes).toEqual([]);
 });
-test('saving a private copy sends only the reusable template and requires an explicit click', async () => {
-  const calls: Array<{ path: string; body: unknown }> = [];
+
+test('a cookie switch after preflight sends the expected account and clears identity on rejection', async () => {
+  const signOut = vi.fn(),
+    associate = vi.fn();
+  let expectedOwner: string | null = null;
   vi.stubGlobal(
     'fetch',
     vi.fn(async (path: string, options: RequestInit) => {
-      calls.push({ path, body: options.body ? JSON.parse(String(options.body)) : undefined });
+      if (options.method === 'POST') {
+        expectedOwner = new Headers(options.headers).get('X-Promptroom-Owner');
+        return {
+          ok: false,
+          status: 401,
+          json: async () => ({ error: 'Account changed. Sign in again.' }),
+        };
+      }
+      return {
+        ok: true,
+        json: async () =>
+          path === '/api/config'
+            ? { googleEnabled: true }
+            : path.includes('get-session')
+              ? { user: { id: 'alice', email: 'alice@example.invalid' } }
+              : path === '/api/moderation'
+                ? { moderator: false }
+                : [],
+      };
+    }),
+  );
+  render(
+    <AccountLibrary
+      explore={false}
+      template={template}
+      onAssociation={associate}
+      onOpen={() => {}}
+      onSignOut={signOut}
+    />,
+  );
+  await waitFor(() => expect(screen.getByText('Signed in as alice@example.invalid')).toBeTruthy());
+  fireEvent.click(screen.getByText('Save private copy'));
+  await waitFor(() => expect(signOut).toHaveBeenCalled());
+  expect(expectedOwner).toBe('alice');
+  expect(associate).toHaveBeenCalledWith(null);
+  expect(screen.queryByText(/Signed in as/)).toBeNull();
+  expect(screen.queryByText('Reload cloud version and replace draft')).toBeNull();
+});
+test('saving a private copy sends only the reusable template and requires an explicit click', async () => {
+  const calls: Array<{ path: string; body: unknown; owner: string | null }> = [];
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (path: string, options: RequestInit) => {
+      calls.push({
+        path,
+        body: options.body ? JSON.parse(String(options.body)) : undefined,
+        owner: new Headers(options.headers).get('X-Promptroom-Owner'),
+      });
       return {
         ok: true,
         json: async () =>
@@ -79,6 +129,11 @@ test('saving a private copy sends only the reusable template and requires an exp
     body: template.body,
     status: 'private',
   });
+  expect(
+    calls
+      .filter((c) => ['/api/prompts', '/api/moderation'].includes(c.path))
+      .every((c) => c.owner === 'user'),
+  ).toBe(true);
 });
 test('explore opens a plain temporary template copy without writing to the account', async () => {
   const open = vi.fn();

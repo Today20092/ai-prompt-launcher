@@ -18,6 +18,8 @@ pnpm dev:cloud
 
 The compatibility date stays at the prototype's tested `2026-10-04` because the pinned Wrangler/workerd runtime is older than today's date. Advance it only with a matching runtime update and a repeat of the Worker HTTP checks.
 
+Private/moderation API requests and sign-out must send `X-Promptroom-Owner` with the session's user ID. The Worker checks this against the authenticated cookie on the same request before accessing private data or writing; a switched account or missing header returns 401. The UI supplies it automatically and clears account state on rejection. Public config/library, session detection and Google OAuth routes stay header-free.
+
 Sign-in stays unavailable until configuration is complete. Local guest editing remains usable. For optional real localhost OAuth, put `AUTH_SECRET`, `GOOGLE_CLIENT_ID`, and `GOOGLE_CLIENT_SECRET` in ignored `.dev.vars` and use the exact `http://localhost:8787/api/auth/callback/google` callback. Never commit that file or copy another worktree's secrets/state.
 
 ## External setup gates — not performed
