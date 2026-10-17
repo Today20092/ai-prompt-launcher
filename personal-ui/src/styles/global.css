@@ -84,7 +84,7 @@
 .account-prompt-list { display: flex; flex-direction: column; gap: 1rem; }
 .account-prompt-list article { padding: 1rem; border: 1px solid var(--border); border-radius: .5rem; }
 .account-prompt-list article button { margin-top: .75rem; }
-.account-development { color: var(--muted-foreground); border-left: 2px solid var(--border); padding-left: .75rem; }
+.account-library pre { max-height: 16rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: .875rem; padding: .75rem; border: 1px solid var(--border); border-radius: .5rem; }
 .workbench { max-width: 1200px; margin: auto; display: grid; grid-template-columns: 260px minmax(0, 1fr); min-height: calc(100dvh - 90px); }
 .library { border-right: 1px solid var(--border); padding: 2rem 1.25rem 2rem 2rem; }
 .library h2 { font-weight: 600; }
