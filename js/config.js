@@ -66,7 +66,7 @@ const builtInChatbots = [
     name: "Copilot",
     icon: "✈️",
     supportsQueryParam: true,
-    urlTemplate: "https://copilot.microsoft.com/?q={{{s}}}",
+    urlTemplate: "https://copilot.com/?q={{{s}}}",
   },
 ];
 

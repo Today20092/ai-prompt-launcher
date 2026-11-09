@@ -143,3 +143,17 @@ test('selecting an invalid file supersedes copying and leaves copy actions usabl
   await act(async () => pending.resolve());
   expect(screen.queryByText('Unfilled template copied.')).toBeNull();
 });
+
+test('template editor shows validation, then saves through the form', async () => {
+  render(<Workbench />);
+  fireEvent.click(await screen.findByRole('button', { name: 'New prompt' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Save template' }));
+  await screen.findByText('Give your prompt a name.');
+  expect(document.activeElement).toBe(screen.getByLabelText('Name'));
+  fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Synthetic saved' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Save template' }));
+  await screen.findByRole('heading', { name: 'Synthetic saved' });
+  expect(screen.queryByText('Give your prompt a name.')).toBeNull();
+  // Select triggers stay named by their field labels and show labels rather than raw values.
+  expect(screen.getByRole('combobox', { name: 'Chat app' }).textContent).toContain('(preferred)');
+});
