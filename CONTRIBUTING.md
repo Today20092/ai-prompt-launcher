@@ -18,4 +18,4 @@ Keep changes focused and explain the user-visible behavior in the pull request. 
 
 Never render community prompt text or imported fields as trusted HTML. Validate custom destination URLs and do not expose privileged backend tokens in the frontend.
 
-Use GitHub Issues for implementation work. The proposed agent configuration is in docs/setup-draft.md pending maintainer review.
+Follow the [Git workflow](docs/branch-workflow.md) for branches, checks and releases. Use GitHub Issues for implementation work. The proposed agent configuration is in docs/setup-draft.md pending maintainer review.
