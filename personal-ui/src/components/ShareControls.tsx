@@ -1,8 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Share2 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSet, FieldLegend } from '@/components/ui/field';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogPanel, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Field, FieldLabel } from '@/components/ui/field';
+import { Fieldset, FieldsetLegend } from '@/components/ui/fieldset';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { createSnapshot, exportPrompt, readSnapshot, shareLink, SHARE_FILE_LIMIT, shareRecovery, type ShareSnapshot } from '@/lib/sharing';
@@ -67,16 +71,17 @@ export default function ShareControls({ template, values, onReceived }: Props) {
   }
 
   return <Dialog open={open} onOpenChange={changeOpen}>
-    <DialogTrigger asChild><Button variant="ghost" className="share-trigger"><Share2 data-icon="inline-start" />Share</Button></DialogTrigger>
-    <DialogContent className="share-dialog">
+    <DialogTrigger render={<Button variant="ghost" className="share-trigger" />}><Share2 data-icon="inline-start" />Share</DialogTrigger>
+    <DialogContent>
       <DialogHeader><DialogTitle>Share prompt</DialogTitle><DialogDescription>Send a reusable template. Include filled values only if you choose them below.</DialogDescription></DialogHeader>
-      <FieldSet><FieldLegend>Link content</FieldLegend>
-        <FieldDescription>{selected.length ? 'Template with selected temporary values. Anyone with the link can read them.' : 'Template only. Your pasted input stays private.'}</FieldDescription>
-        <FieldGroup>{rendered.variables.map((name, index) => <Field key={name} orientation="horizontal">
-          <input type="checkbox" id={`share-value-${index}`} className="accent-primary focus-visible:outline-2 focus-visible:outline-ring" checked={selected.includes(name)} onChange={event => { generation.current++; operations.current.cancel(); setBusy(false); setSelected(old => event.target.checked ? [...old, name] : old.filter(item => item !== name)); setStatus(''); setManual(''); }} />
+      <DialogPanel className="share-dialog">
+      <Fieldset className="max-w-none gap-3"><FieldsetLegend>Link content</FieldsetLegend>
+        <p className="muted text-xs">{selected.length ? 'Template with selected temporary values. Anyone with the link can read them.' : 'Template only. Your pasted input stays private.'}</p>
+        <div className="flex flex-col gap-3">{rendered.variables.map((name, index) => <Field key={name} className="flex-row items-center">
+          <Checkbox id={`share-value-${index}`} checked={selected.includes(name)} onCheckedChange={checked => { generation.current++; operations.current.cancel(); setBusy(false); setSelected(old => checked ? [...old, name] : old.filter(item => item !== name)); setStatus(''); setManual(''); }} />
           <FieldLabel htmlFor={`share-value-${index}`}>Include {name}</FieldLabel>
-        </Field>)}</FieldGroup>
-      </FieldSet>
+        </Field>)}</div>
+      </Fieldset>
       <section className="share-preview" aria-labelledby="share-preview-heading">
         <h2 id="share-preview-heading">What you’re sharing</h2>
         <dl className="share-definition">
@@ -86,7 +91,7 @@ export default function ShareControls({ template, values, onReceived }: Props) {
           {Object.entries(snapshot.values ?? {}).map(([name, value]) => <div key={name}><dt>Included value: {name}</dt><dd><pre tabIndex={0} aria-label={`Shared value ${name}`}>{value || '(empty value)'}</pre></dd></div>)}
         </dl>
       </section>
-      {!link && <p role="status">This full URL exceeds 8,000 characters. Nothing is truncated. Copy the full template or filled prompt, or download a template-only JSON file.</p>}
+      {!link && <Alert variant="warning" role="status"><AlertDescription>This full URL exceeds 8,000 characters. Nothing is truncated. Copy the full template or filled prompt, or download a template-only JSON file.</AlertDescription></Alert>}
       <div className="share-link-actions">
         <Button disabled={!link || busy} onClick={() => link && copy(link, 'Snapshot link copied.')}>Copy link</Button>
         {canShare && <Button variant="outline" disabled={!link || busy} onClick={deviceShare}>Device share menu</Button>}
@@ -100,9 +105,9 @@ export default function ShareControls({ template, values, onReceived }: Props) {
         <Button variant="outline" disabled={busy} onClick={() => { if (rendered.missing.length) { setStatus(`Fill required fields first: ${rendered.missing.join(', ')}.`); return; } void copy(rendered.text, 'Complete filled prompt copied.'); }}>Copy filled prompt</Button>
         </div>
       </section>
-      <details className="share-details">
-        <summary>Transfer a template file</summary>
-        <div className="share-details-body">
+      <Collapsible className="share-details">
+        <CollapsibleTrigger>Transfer a template file</CollapsibleTrigger>
+        <CollapsiblePanel><div className="share-details-body">
         <p className="share-note">Save or open one reusable template. Downloads exclude all pasted input.</p>
         <Button variant="outline" onClick={download}>Download template JSON</Button>
       <Field><FieldLabel htmlFor="single-prompt-file">Open single-prompt JSON</FieldLabel><Input id="single-prompt-file" type="file" accept=".json,application/json" onChange={async event => {
@@ -120,18 +125,19 @@ export default function ShareControls({ template, values, onReceived }: Props) {
         } catch { if (attempt === generation.current) setStatus(shareRecovery); }
         finally { if (attempt === generation.current) setBusy(false); }
       }} /></Field>
-        </div>
-      </details>
-      <details className="share-details">
-        <summary>View link and snapshot data</summary>
-        <div className="share-details-body">
+        </div></CollapsiblePanel>
+      </Collapsible>
+      <Collapsible className="share-details">
+        <CollapsibleTrigger>View link and snapshot data</CollapsibleTrigger>
+        <CollapsiblePanel><div className="share-details-body">
           <p className="share-note">Anyone with the link can read its contents. URL encoding formats the data for transport; it does not encrypt it.</p>
           {link && <Field><FieldLabel htmlFor="share-link">Link to copy or share</FieldLabel><Textarea id="share-link" readOnly rows={3} value={link} /></Field>}
           <Field><FieldLabel htmlFor="share-preview">Exact snapshot data</FieldLabel><Textarea id="share-preview" readOnly rows={7} value={preview} /></Field>
-        </div>
-      </details>
+        </div></CollapsiblePanel>
+      </Collapsible>
       {manual && <Field><FieldLabel htmlFor="share-manual">Complete text for manual copying</FieldLabel><Textarea id="share-manual" readOnly rows={7} value={manual} /></Field>}
       <p role="status">{status}</p>
+      </DialogPanel>
     </DialogContent>
   </Dialog>;
 }
