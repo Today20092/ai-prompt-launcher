@@ -107,7 +107,7 @@
   [data-slot="dialog-popup"] form { min-height: auto; }
   [data-slot="scroll-area-viewport"] { height: auto; overflow: visible !important; }
 }
-.muted, .session-note, .entry-meta, .launch-help, .readiness, .editor-note, .mobile-session-note { color: var(--muted-foreground); }
+.muted, .entry-meta, .launch-help, .readiness, .editor-note { color: var(--muted-foreground); }
 .skip-link { position: absolute; left: 1rem; top: -5rem; padding: .75rem; background: var(--popover); z-index: 60; }
 .skip-link:focus { top: .5rem; }
 .app-header { max-width: 1200px; margin: auto; padding: 1.25rem 2rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; border-bottom: 1px solid var(--border); }
@@ -125,7 +125,6 @@
 @media (forced-colors: active) { .prompt-nav.is-selected { outline: 2px solid Highlight; } }
 .prompt-nav strong { font-size: .875rem; font-weight: 600; }
 .prompt-nav span { font-size: .8rem; line-height: 1.5; color: var(--muted-foreground); }
-.session-note { font-size: .75rem; line-height: 1.6; margin: 2rem .85rem 0; }
 .workspace { padding: 2rem clamp(1.5rem, 4vw, 3.5rem) 3rem; min-width: 0; }
 .workspace-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: .5rem .75rem; margin-bottom: 1.5rem; }
 .workspace-heading-text { display: contents; }
@@ -139,13 +138,14 @@
 .field-heading { display: flex; align-items: baseline; justify-content: space-between; gap: .75rem; }
 .required-label { font-size: .75rem; }
 .variable-input textarea { resize: vertical; min-height: 6rem; max-height: 18rem; overflow-y: auto; max-width: 100%; }
-.entry-meta { display: flex; flex-wrap: wrap; gap: .5rem 1rem; justify-content: space-between; margin-top: .75rem; font-size: .75rem; }
-.entry-meta > :last-child { margin-left: auto; }
+.entry-meta { margin-top: .75rem; font-size: .75rem; }
 .backup-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
 .backup-actions > button { width: 100%; height: auto; min-height: 44px; white-space: normal; }
-.launch-panel { display: grid; grid-template-columns: minmax(130px, 1fr) auto; gap: .75rem 1rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+.launch-panel { display: grid; grid-template-columns: minmax(0, 1fr); gap: .75rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+.app-picker { max-width: 24rem; }
 .app-picker [data-slot="select-trigger"] { width: 100%; }
 .launch-actions { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .5rem; }
+.theme-toggle { justify-self: start; width: fit-content; }
 .launch-panel > * { min-width: 0; }
 .launch-panel [data-slot="select-value"] { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .launch-help, .readiness, .action-status, .manual-link { grid-column: 1 / -1; font-size: .8rem; line-height: 1.5; }
@@ -153,7 +153,8 @@
 .action-status:empty { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 .manual-link { display: inline-flex; width: fit-content; align-items: center; gap: .35rem; color: var(--primary); text-decoration: underline; padding: .5rem 0; }
 .manual-link svg { width: 1rem; height: 1rem; }
-.preview { margin-top: 1.5rem; border: 1px solid var(--border); border-radius: .75rem; background: var(--popover); }
+.preview-count { font-size: .75rem; font-weight: 400; }
+.preview { margin-top: 1rem; border: 1px solid var(--border); border-radius: .75rem; background: var(--popover); }
 .preview [data-slot="collapsible-trigger"] { width: 100%; text-align: left; display: flex; flex-wrap: wrap; gap: .75rem; justify-content: space-between; align-items: center; padding: 1rem; font-size: .875rem; font-weight: 500; }
 .preview [data-slot="collapsible-trigger"] > span:first-child::before { content: '+ '; color: var(--muted-foreground); }
 .preview [data-panel-open] > span:first-child::before { content: '− '; }
@@ -193,7 +194,7 @@
   .share-text-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 .editor-note { text-align: right; font-size: .75rem; }
-.mobile-picker, .mobile-session-note { display: none; }
+.mobile-picker { display: none; }
 .favorite-icon { display: inline; width: 1rem; height: 1rem; margin-right: .35rem; fill: currentColor; }
 .storage-note, .storage-status { font-size: .8rem; line-height: 1.6; margin: .75rem 0; }
 .storage-status { border: 1px solid var(--destructive); padding: .75rem; border-radius: .5rem; overflow-wrap: anywhere; }
@@ -214,18 +215,20 @@
   .workbench { display: block; min-height: auto; }
   .library { display: none; }
   .workspace { padding: 1.25rem 1rem max(2rem, env(safe-area-inset-bottom)); }
-  .mobile-picker { display: block; margin-bottom: 1.25rem; }
-  .mobile-picker [data-slot="select-trigger"] { width: 100%; }
-  .workspace-heading { margin-bottom: 1.25rem; }
+  .mobile-picker { display: block; margin-bottom: .25rem; }
+  .mobile-picker [data-slot="select-trigger"] { width: 100%; height: auto; }
+  /* The picker is the only visible title on phones, so long names must wrap. */
+  .mobile-picker [data-slot="select-value"] { white-space: normal; overflow-wrap: anywhere; }
+  .workspace-heading { margin-bottom: 1rem; }
   .workspace-heading .prompt-actions { grid-column: 1 / -1; grid-row: 3; justify-content: flex-end; }
-  .launch-panel { grid-template-columns: minmax(0, 1fr); padding-top: 1.25rem; margin-top: 1.25rem; }
+  .launch-panel { padding-top: 1.25rem; margin-top: 1.25rem; }
+  .app-picker { max-width: none; }
   .launch-actions { display: grid; grid-template-columns: 1fr 1fr; }
   .launch-actions button { width: 100%; white-space: normal; height: auto; min-height: 44px; }
   [data-slot="button"], [data-slot="select-trigger"], [data-slot="tooltip-trigger"], [data-slot="dialog-trigger"], [data-slot="collapsible-trigger"], [role="option"], .brand { min-height: 44px; }
   .header-actions [aria-label], .prompt-actions [aria-label] { min-width: 44px; }
   [data-slot="input"] { height: 44px; }
   input, textarea { font-size: 16px !important; }
-  .mobile-session-note { display: block; margin-top: 1rem; font-size: .75rem; }
   .t3-options-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 360px) {

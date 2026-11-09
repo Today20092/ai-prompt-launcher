@@ -3,7 +3,6 @@ import { flushSync } from 'react-dom';
 import { ArrowUpRight, Copy, Moon, Pencil, Plus, Settings2, Sparkles, Star, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertAction, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogPanel, DialogTitle } from '@/components/ui/dialog';
 import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field';
@@ -227,7 +226,6 @@ export default function Workbench() {
       <a href="#workspace" className="brand"><Sparkles aria-hidden="true" />Promptroom</a>
       <div className="header-actions">
         <Tip label="Preferences"><Button variant="ghost" size="icon" disabled={!ready} aria-label="Preferences" onClick={event => { opener.current = event.currentTarget; setPreferencesOpen(true); }}><Settings2 /></Button></Tip>
-        <Tip label={dark ? 'Use light theme' : 'Use dark theme'}><Button variant="ghost" size="icon" aria-label={dark ? 'Use light theme' : 'Use dark theme'} onClick={toggleTheme}>{dark ? <Sun /> : <Moon />}</Button></Tip>
         <Button variant="outline" disabled={!ready} onClick={event => openEditor(event, true)}><Plus data-icon="inline-start" />New prompt</Button>
       </div>
     </header>
@@ -241,7 +239,6 @@ export default function Workbench() {
               <strong>{workspace.favorites.includes(item.id) && <Star aria-label="Favorite" className="favorite-icon" />}{templateLabel(item, templates)}</strong><span>{item.description || 'Your custom template'}</span>
           </Item>)}
         </nav>
-        <p className="session-note">Prompts and their chat apps stay in this browser. Pasted input stays temporary.</p>
       </aside>
       <section id="workspace" className="workspace" aria-labelledby="prompt-title" tabIndex={-1}>
         <div role="status" className="empty:sr-only">{receivedStatus && <Alert className="my-3" variant="info" role="none"><AlertDescription>{receivedStatus}</AlertDescription><AlertAction className="flex-wrap">{received && <Button variant="outline" onClick={saveCopy}>Save a copy</Button>}<Button variant="ghost" onClick={() => { setReceived(null); setReceivedStatus(''); setStatus(''); setManualCopy(false); }}>Return to saved workspace</Button></AlertAction></Alert>}</div>
@@ -251,7 +248,7 @@ export default function Workbench() {
           </Field>
         </div>
         <div className="workspace-heading">
-          <div className="workspace-heading-text"><h1 id="prompt-title">{templateLabel(template, templates)}</h1>{template.description && <p className="muted">{template.description}</p>}</div>
+          <div className="workspace-heading-text"><h1 id="prompt-title" className={cn(!received && 'max-[760px]:sr-only')}>{templateLabel(template, templates)}</h1>{template.description && <p className="muted">{template.description}</p>}</div>
           <div className="prompt-actions">
             <ShareControls key={template.id} template={template} values={values} onReceived={receive} />
             <Tip label={favorite ? 'Remove favorite' : 'Add favorite'}><Toggle disabled={Boolean(received)} aria-label={favorite ? 'Remove favorite' : 'Add favorite'} pressed={favorite} onPressedChange={() => persist({ ...workspace, favorites: favorite ? workspace.favorites.filter(id => id !== template.id) : [...workspace.favorites, template.id] })}><Star fill={favorite ? 'currentColor' : 'none'} /></Toggle></Tip>
@@ -271,15 +268,15 @@ export default function Workbench() {
             </Field>;
           })}
         </div>
-        <div className="entry-meta">{!rendered.variables.length && <span>This template has no variables. It is ready to use.</span>}<span>{rendered.text.length.toLocaleString()} characters in prompt</span></div>
+        {!rendered.variables.length && <p className="entry-meta">This template has no variables. It is ready to use.</p>}
+        <Collapsible open={previewOpen} onOpenChange={setPreviewOpen} className="preview">
+          <CollapsibleTrigger><span>Preview complete prompt</span><span className="muted preview-count">{rendered.text.length.toLocaleString()} characters</span></CollapsibleTrigger>
+          <CollapsiblePanel keepMounted><pre ref={previewText} role="group" tabIndex={0} aria-label="Complete prompt">{rendered.text}</pre></CollapsiblePanel>
+        </Collapsible>
         <div className="launch-panel">
           <Field className="app-picker"><FieldLabel htmlFor="chat-app">Chat app</FieldLabel>
-            <ChoiceSelect id="chat-app" value={template.chatApp ?? 'preferred'} items={[{ value: 'preferred', label: `Use preferred (${workspace.preferredApp})` }, ...appChoices]} onChange={name => { changeTemplate({ ...template, chatApp: name === 'preferred' ? undefined : name as AppName }); setStatus(''); setManualCopy(false); }} />
+            <ChoiceSelect id="chat-app" value={template.chatApp ?? 'preferred'} items={[{ value: 'preferred', label: `${workspace.preferredApp} (preferred)` }, ...appChoices]} onChange={name => { changeTemplate({ ...template, chatApp: name === 'preferred' ? undefined : name as AppName }); setStatus(''); setManualCopy(false); }} />
           </Field>
-          <div className="launch-actions">
-            <Button disabled={busy} onClick={launchPrompt}>{directT3 ? 'Send to T3 Chat' : `Open in ${app.name}`}<ArrowUpRight data-icon="inline-end" /></Button>
-            <Button variant="outline" disabled={busy} onClick={copyPrompt}><Copy data-icon="inline-start" />Copy prompt</Button>
-          </div>
           {app.name === 'T3 Chat' && <Collapsible key={template.id} className="t3-options">
             <CollapsibleTrigger><span>T3 Chat options</span><span className="muted">Saved for this prompt</span></CollapsibleTrigger>
             <CollapsiblePanel><div className="t3-options-body">
@@ -295,17 +292,16 @@ export default function Workbench() {
               <Button variant="ghost" onClick={() => { changeTemplate({ ...template, t3Options: undefined }); setStatus('T3 options reset to defaults.'); }}>Reset options</Button>
             </div></CollapsiblePanel>
           </Collapsible>}
-          <p className="launch-help">{directT3 ? 'Sends your complete prompt as the first message in a new T3 chat, with the options above.' : handoff ? 'This prompt is long. Copies it in full, then opens T3 Chat. Paste to send and choose your options there.' : 'Copies your complete prompt, then opens a new chat. Paste to send.'}</p>
+          <p className="launch-help">{directT3 ? 'Opens a new T3 chat with this prompt.' : handoff ? 'This prompt is long. Copies it in full, then opens T3 Chat. Paste to send and choose your options there.' : 'Copies your complete prompt, then opens a new chat. Paste to send.'}</p>
+          <div className="launch-actions">
+            <Button disabled={busy} onClick={launchPrompt}>{directT3 ? 'Send to T3 Chat' : `Open in ${app.name}`}<ArrowUpRight data-icon="inline-end" /></Button>
+            <Button variant="outline" disabled={busy} onClick={copyPrompt}><Copy data-icon="inline-start" />Copy prompt</Button>
+          </div>
           <p className="readiness" aria-live="polite">{rendered.missing.length ? `Still needed: ${rendered.missing.map(variableLabel).join(', ')}.` : 'Ready to copy or open.'}</p>
           <p role="status" className="action-status">{status}</p>
           {manualCopy && <Button variant="link" className="manual-link" render={<a href={directT3 ? handoff?.url : app.url} target="_blank" rel="noopener noreferrer" />}>{directT3 ? 'Send to T3 Chat manually' : `Open ${app.name} manually`}<ArrowUpRight aria-hidden="true" /></Button>}
         </div>
-        <Collapsible open={previewOpen} onOpenChange={setPreviewOpen} className="preview">
-          <CollapsibleTrigger><span>Preview complete prompt</span><Badge variant="secondary">{rendered.variables.length} {rendered.variables.length === 1 ? 'variable' : 'variables'}</Badge></CollapsibleTrigger>
-          <CollapsiblePanel keepMounted><pre ref={previewText} role="group" tabIndex={0} aria-label="Complete prompt">{rendered.text}</pre></CollapsiblePanel>
-        </Collapsible>
-        <p className="mobile-session-note">Prompts and their chat apps stay in this browser. Pasted input stays temporary.</p>
-          <p className="storage-note">Saved only on this device and browser. Clearing site data removes your saved workspace.</p>
+        <p className="storage-note">Your prompts are saved only in this browser. Clearing site data removes them. Pasted text isn't saved.</p>
         {savingStatus && <Alert className="my-3" variant="error"><AlertDescription>{savingStatus}</AlertDescription><AlertAction><Button variant="outline" onClick={() => persist(workspace)}>Retry saving</Button></AlertAction></Alert>}
       </section>
     </main>
@@ -342,6 +338,7 @@ export default function Workbench() {
           <ChoiceSelect id="preferred-app" value={workspace.preferredApp} items={appChoices} onChange={name => { persist({ ...workspace, preferredApp: name as AppName }); setStatus(''); setManualCopy(false); }} />
           <FieldDescription>T3 Chat is the default. Choose another app here, or override it for an individual prompt.</FieldDescription>
         </Field>
+        <Button variant="outline" className="theme-toggle" onClick={toggleTheme}>{dark ? <Sun data-icon="inline-start" /> : <Moon data-icon="inline-start" />}{dark ? 'Use light theme' : 'Use dark theme'}</Button>
         <BackupControls workspace={workspace} store={store.current} onImported={next => { setWorkspace(next); setSavingStatus(''); setAttempted(false); setManualCopy(false); setStatus(''); }} /></DialogPanel>
         <DialogFooter><Button onClick={() => setPreferencesOpen(false)}>Done</Button></DialogFooter>
       </DialogContent>
