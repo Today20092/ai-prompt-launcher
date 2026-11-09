@@ -82,7 +82,7 @@ export default function BackupControls({ workspace, store, onImported }: Props) 
   return <>
     <Separator />
     <section aria-labelledby="backup-heading" className="flex flex-col gap-3">
-      <h2 id="backup-heading">Backups</h2>
+      <h3 id="backup-heading">Backups</h3>
       <p className="muted">Transfer your saved prompts, favorites and app settings between browsers. Pasted input is excluded. Any older archived presets are preserved.</p>
       <div className="backup-actions">
         <Button variant="outline" onClick={download}><Download data-icon="inline-start" />Export backup</Button>
@@ -97,16 +97,16 @@ export default function BackupControls({ workspace, store, onImported }: Props) 
                 <FieldDescription id="backup-file-help">Choose a Promptroom version 1 backup. It is read in this browser.</FieldDescription>
                 {error && <FieldError match id="backup-error" role="alert">{error}</FieldError>}
               </Field>
-            {reading && <p role="status">Reading and validating backup...</p>}
+            <p role="status" className="empty:sr-only">{reading && 'Reading and validating backup...'}</p>
             {stale && <Alert variant="error"><AlertDescription>Your workspace changed during review. Choose the file again to review a fresh merge.</AlertDescription></Alert>}
-            {review && !stale && <div className="flex flex-col gap-2" aria-live="polite">
+            <div aria-live="polite" className="empty:sr-only">{review && !stale && <div className="flex flex-col gap-2">
               <p>{review.plan.added.length} prompts to add. {review.plan.skipped} identical prompts to skip. {review.plan.favoritesAdded} favorites to add.</p>
               {review.plan.added.length > 0 && <ul aria-label="Prompts to add" className="max-h-40 overflow-y-auto list-disc pl-5">
                 {review.plan.added.map(item => <li className="wrap-anywhere" key={item.id}>{templateLabel(item, review.plan.next.templates)}</li>)}
               </ul>}
               {(review.plan.archivedAdded > 0 || review.plan.archivedSkipped > 0) && <p>{review.plan.archivedAdded} archived presets to add. {review.plan.archivedSkipped} identical archived presets to skip. Preset controls remain unavailable.</p>}
               <p>{review.plan.restorePreferences ? `This browser has a fresh workspace. Restore preferred app ${review.plan.next.preferredApp} and the last-used prompt from the backup.` : 'Keep this browser’s preferred app and current prompt.'}</p>
-            </div>}
+            </div>}</div>
             </DialogPanel>
             <DialogFooter>
               <Button variant="outline" onClick={() => changeOpen(false)}>Cancel</Button>
@@ -115,7 +115,7 @@ export default function BackupControls({ workspace, store, onImported }: Props) 
           </DialogContent>
         </Dialog>
       </div>
-      {status && <p role="status">{status}</p>}
+      <p role="status" className="empty:sr-only">{status}</p>
     </section>
   </>;
 }

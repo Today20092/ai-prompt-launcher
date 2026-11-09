@@ -78,20 +78,20 @@ export default function ShareControls({ template, values, onReceived }: Props) {
       <Fieldset className="max-w-none gap-3"><FieldsetLegend>Link content</FieldsetLegend>
         <p className="muted text-xs">{selected.length ? 'Template with selected temporary values. Anyone with the link can read them.' : 'Template only. Your pasted input stays private.'}</p>
         <div className="flex flex-col gap-3">{rendered.variables.map((name, index) => <Field key={name} className="flex-row items-center">
-          <Checkbox id={`share-value-${index}`} checked={selected.includes(name)} onCheckedChange={checked => { generation.current++; operations.current.cancel(); setBusy(false); setSelected(old => checked ? [...old, name] : old.filter(item => item !== name)); setStatus(''); setManual(''); }} />
+          <Checkbox className="size-6 sm:size-6" id={`share-value-${index}`} checked={selected.includes(name)} onCheckedChange={checked => { generation.current++; operations.current.cancel(); setBusy(false); setSelected(old => checked ? [...old, name] : old.filter(item => item !== name)); setStatus(''); setManual(''); }} />
           <FieldLabel htmlFor={`share-value-${index}`}>Include {name}</FieldLabel>
         </Field>)}</div>
       </Fieldset>
       <section className="share-preview" aria-labelledby="share-preview-heading">
-        <h2 id="share-preview-heading">What you’re sharing</h2>
+        <h3 id="share-preview-heading">What you’re sharing</h3>
         <dl className="share-definition">
           <div><dt>Name</dt><dd>{snapshot.template.title}</dd></div>
           {snapshot.template.description && <div><dt>Description</dt><dd>{snapshot.template.description}</dd></div>}
-          <div><dt>Template</dt><dd><pre tabIndex={0} aria-label="Shared template body">{snapshot.template.body}</pre></dd></div>
-          {Object.entries(snapshot.values ?? {}).map(([name, value]) => <div key={name}><dt>Included value: {name}</dt><dd><pre tabIndex={0} aria-label={`Shared value ${name}`}>{value || '(empty value)'}</pre></dd></div>)}
+          <div><dt>Template</dt><dd><pre role="group" tabIndex={0} aria-label="Shared template body">{snapshot.template.body}</pre></dd></div>
+          {Object.entries(snapshot.values ?? {}).map(([name, value]) => <div key={name}><dt>Included value: {name}</dt><dd><pre role="group" tabIndex={0} aria-label={`Shared value ${name}`}>{value || '(empty value)'}</pre></dd></div>)}
         </dl>
       </section>
-      {!link && <Alert variant="warning" role="status"><AlertDescription>This full URL exceeds 8,000 characters. Nothing is truncated. Copy the full template or filled prompt, or download a template-only JSON file.</AlertDescription></Alert>}
+      <div role="status" className="empty:sr-only">{!link && <Alert variant="warning" role="none"><AlertDescription>This full URL exceeds 8,000 characters. Nothing is truncated. Copy the full template or filled prompt, or download a template-only JSON file.</AlertDescription></Alert>}</div>
       <div className="share-link-actions">
         <Button disabled={!link || busy} onClick={() => link && copy(link, 'Snapshot link copied.')}>Copy link</Button>
         {canShare && <Button variant="outline" disabled={!link || busy} onClick={deviceShare}>Device share menu</Button>}
@@ -99,7 +99,7 @@ export default function ShareControls({ template, values, onReceived }: Props) {
       <p className="share-note">Links keep this snapshot even if you edit later. They have no expiry or revocation.</p>
       {!canShare && <p className="share-note">Device sharing is unavailable here. Use Copy link or a file instead.</p>}
       <section className="share-alternatives" aria-labelledby="share-copy-heading">
-        <h2 id="share-copy-heading">Or copy the text</h2>
+        <h3 id="share-copy-heading">Or copy the text</h3>
         <div className="share-text-actions">
         <Button variant="outline" disabled={busy} onClick={() => copy(template.body, 'Unfilled template copied.')}>Copy template</Button>
         <Button variant="outline" disabled={busy} onClick={() => { if (rendered.missing.length) { setStatus(`Fill required fields first: ${rendered.missing.join(', ')}.`); return; } void copy(rendered.text, 'Complete filled prompt copied.'); }}>Copy filled prompt</Button>

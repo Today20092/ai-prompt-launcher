@@ -244,7 +244,7 @@ export default function Workbench() {
         <p className="session-note">Prompts and their chat apps stay in this browser. Pasted input stays temporary.</p>
       </aside>
       <section id="workspace" className="workspace" aria-labelledby="prompt-title" tabIndex={-1}>
-        {receivedStatus && <Alert className="my-3" variant="info" role="status"><AlertDescription>{receivedStatus}</AlertDescription><AlertAction className="flex-wrap">{received && <Button variant="outline" onClick={saveCopy}>Save a copy</Button>}<Button variant="ghost" onClick={() => { setReceived(null); setReceivedStatus(''); setStatus(''); setManualCopy(false); }}>Return to saved workspace</Button></AlertAction></Alert>}
+        <div role="status" className="empty:sr-only">{receivedStatus && <Alert className="my-3" variant="info" role="none"><AlertDescription>{receivedStatus}</AlertDescription><AlertAction className="flex-wrap">{received && <Button variant="outline" onClick={saveCopy}>Save a copy</Button>}<Button variant="ghost" onClick={() => { setReceived(null); setReceivedStatus(''); setStatus(''); setManualCopy(false); }}>Return to saved workspace</Button></AlertAction></Alert>}</div>
         <div className="mobile-picker">
           <Field><FieldLabel htmlFor="prompt-picker">Your prompts</FieldLabel>
             <ChoiceSelect id="prompt-picker" value={received ? null : selected} placeholder="Temporary received prompt" onChange={switchTemplate} items={templates.map(item => ({ value: item.id, label: `${workspace.favorites.includes(item.id) ? '★ ' : ''}${templateLabel(item, templates)}` }))} />
@@ -302,11 +302,11 @@ export default function Workbench() {
         </div>
         <Collapsible open={previewOpen} onOpenChange={setPreviewOpen} className="preview">
           <CollapsibleTrigger><span>Preview complete prompt</span><Badge variant="secondary">{rendered.variables.length} {rendered.variables.length === 1 ? 'variable' : 'variables'}</Badge></CollapsibleTrigger>
-          <CollapsiblePanel keepMounted><pre ref={previewText} tabIndex={0} aria-label="Complete prompt">{rendered.text}</pre></CollapsiblePanel>
+          <CollapsiblePanel keepMounted><pre ref={previewText} role="group" tabIndex={0} aria-label="Complete prompt">{rendered.text}</pre></CollapsiblePanel>
         </Collapsible>
         <p className="mobile-session-note">Prompts and their chat apps stay in this browser. Pasted input stays temporary.</p>
           <p className="storage-note">Saved only on this device and browser. Clearing site data removes your saved workspace.</p>
-        {savingStatus && <Alert className="my-3" variant="error" role="status"><AlertDescription>{savingStatus}</AlertDescription><AlertAction><Button variant="outline" onClick={() => persist(workspace)}>Retry saving</Button></AlertAction></Alert>}
+        {savingStatus && <Alert className="my-3" variant="error"><AlertDescription>{savingStatus}</AlertDescription><AlertAction><Button variant="outline" onClick={() => persist(workspace)}>Retry saving</Button></AlertAction></Alert>}
       </section>
     </main>
     <Dialog open={editing} onOpenChange={setEditing}>
