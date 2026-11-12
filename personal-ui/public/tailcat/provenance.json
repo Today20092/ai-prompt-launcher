@@ -1,0 +1,16 @@
+{
+  "revision": "e00cdde6ff787f801361ff85ed085775c775d4c5",
+  "sourceArchiveSha256": "96d152f1d51a63c9f68ecb56debb22e0c8f7035330bf1092534e95b3d7300098",
+  "go": "go1.27.2",
+  "flags": "-trimpath; upstream WASM feature tags; -ldflags=-s -w",
+  "assets": {
+    "main.wasm.gz": {
+      "bytes": 6535314,
+      "sha256": "7aaf46acf59d7d902af828111becc8e9dd0445b1b9a6d2dbe91e3657f27360f9"
+    },
+    "wasm_exec.js": {
+      "bytes": 16992,
+      "sha256": "0c949f4996f9a89698e4b5c586de32249c3b69b7baadb64d220073cc04acba14"
+    }
+  }
+}
