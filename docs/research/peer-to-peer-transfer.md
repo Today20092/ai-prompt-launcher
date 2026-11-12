@@ -2,6 +2,8 @@
 
 Research date: 2026-11-12. External research only; no source exploration or device testing. Project context (Astro/React, GitHub Pages, localStorage and validated backup/import) supplied by the task. Recommendations below are design proposals, not verified implementation behavior.
 
+Decision update: the maintainer selected tailcat after this comparison. Its [official repository](https://github.com/tailscale/tailcat) offers free rate-limited DERP relays; exact limits remain unverified. Follow the [selected spec](../device-transfer-spec.md) and [implementation verification](../device-transfer-verification.md), rather than the initial WebRTC recommendation below.
+
 ## Recommendation
 
 Spike a native **WebRTC reliable ordered data channel**, with explicit sender and receiver confirmation. Keep backup/import as the fallback. A static frontend can initiate connections, but GitHub Pages cannot supply signaling or TURN. Choose infrastructure before promising reliable cross-network transfer. Do not introduce continuous synchronization, accounts, persistent pairing, or an iroh runtime for this small feature.

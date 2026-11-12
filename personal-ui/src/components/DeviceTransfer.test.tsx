@@ -130,3 +130,22 @@ test('invitation opens without network and sending exports only saved data after
   await screen.findByText('Transfer complete. The other device confirmed its import.');
   expect(approved).toBe(true);
 });
+
+test('an invitation arriving in an already-open tab opens the sender without network', async () => {
+  const { result } = store();
+  render(<DeviceTransfer workspace={result.data} store={result} onImported={vi.fn()} />);
+  await act(async () => {
+    window.history.replaceState(null, '', '#transfer=tcSynthetic');
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+  });
+  expect((screen.getByLabelText('Receiver invitation link or address') as HTMLInputElement).value).toBe('tcSynthetic');
+  expect(window.location.hash).toBe('');
+  expect(receiveTransfer).not.toHaveBeenCalled();
+  await act(async () => {
+    window.history.replaceState(null, '', '#transfer=%');
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+  });
+  expect((screen.getByLabelText('Receiver invitation link or address') as HTMLInputElement).value).toBe('');
+  expect((screen.getByRole('button', { name: 'Send saved library' }) as HTMLButtonElement).disabled).toBe(true);
+  expect(screen.getByText('This device invitation is invalid. Ask for a new link.')).toBeTruthy();
+});

@@ -34,6 +34,7 @@ tailscale serve --bg --https=8449 http://127.0.0.1:4329
 
 ## Behavior
 
+- **Transfer** in the header copies a saved library without an account. On the receiving device choose **Receive library**, open its QR/link on the sending device, and approve matching codes on both. The receiver reviews and applies the merge; existing prompts and device preferences are kept. Both pages must stay open. Invitations expire after five minutes and admit one connection. Transfers use tailcat's encrypted, rate-limited public relays; JSON backups remain available if a relay is unavailable or the library exceeds the transfer limit. Pasted input is excluded; saved archived preset metadata still travels with the backup. This is a one-time transfer, not background synchronization.
 - Grammar corrector opens initially. Transcript cleanup is the other starter template. Neither requires a tone.
 - All named variables are required multiline fields. Names start with an ASCII letter or underscore, followed by letters, digits, underscores, or hyphens. Whitespace around a name is allowed. Repeated names use one field.
 - Blank or whitespace-only values remain as placeholders in the preview and block copy/launch. Other values retain their exact whitespace and are substituted once. Pasted HTML and braces are plain text.
@@ -50,3 +51,5 @@ tailscale serve --bg --https=8449 http://127.0.0.1:4329
 - Launch controls are in normal document flow. They do not float over a field or keyboard. Large pasted values scroll within the field; the preview always shows the complete text.
 
 The automated suite covers prompt rendering, exact T3 URL encoding and options, long-prompt policy, option validation and per-prompt option restoration. Browser review covers edit, fill, preview, launch, mobile and desktop widths, themes, keyboard focus and enlarged text. Test data should be synthetic.
+
+Tailcat's pinned browser assets are checked in; normal builds do not need Go. See [asset build instructions](../docs/tailcat-build.md) and [transfer verification](../docs/device-transfer-verification.md). The optional live-relay check is `node scripts/verify-tailcat.cjs` with `PLAYWRIGHT_MODULE` pointing to an installed Playwright package, `PLAYWRIGHT_EXECUTABLE` if its bundled browser is unavailable, and `PROMPTROOM_URL` pointing to the local app.

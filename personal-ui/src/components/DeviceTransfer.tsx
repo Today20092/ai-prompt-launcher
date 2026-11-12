@@ -7,7 +7,7 @@ import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { exportBackup, planImport, readBackup, templateLabel, type ImportPlan } from '@/lib/backup';
 import { beginClipboard, clipboardBrowser, LatestOperation } from '@/lib/browser';
-import { receiveTransfer, sendTransfer } from '@/lib/device-transfer';
+import { receiveTransfer, sendTransfer, transferInvitationLink, parseTransferAddress, watchTransferInvitation } from '@/lib/device-transfer';
 import type { Workspace, WorkspaceStore } from '@/lib/workspace';
 
 type Props = { workspace: Workspace; store: WorkspaceStore | null; onImported: (workspace: Workspace) => void };
@@ -28,9 +28,7 @@ export default function DeviceTransfer({ workspace, store, onImported }: Props) 
   const latest = useRef({ workspace, store, onImported });
   latest.current = { workspace, store, onImported };
   const stale = review !== null && (review.base !== workspace || store?.data !== review.base);
-  const link = invitation && typeof window !== 'undefined' ? (() => {
-    const url = new URL(window.location.href); url.search = ''; url.hash = `transfer=${encodeURIComponent(invitation)}`; return url.href;
-  })() : '';
+  const link = invitation ? transferInvitationLink(invitation) : '';
 
   useEffect(() => {
     let cancelled = false;
@@ -42,13 +40,13 @@ export default function DeviceTransfer({ workspace, store, onImported }: Props) 
   }, [link]);
 
   useEffect(() => {
-    const hash = window.location.hash;
-    if (hash.startsWith('#transfer=')) {
-      try { setAddress(decodeURIComponent(hash.slice(10))); setOpen(true); }
-      catch { setError('This device invitation is invalid. Ask for a new link.'); setOpen(true); }
-      window.history.replaceState(null, '', window.location.pathname + window.location.search);
-    }
-    return () => { controller.current?.abort(); copies.current.cancel(); };
+    const stopWatching = watchTransferInvitation(address => {
+      controller.current?.abort(); controller.current = null;
+      setBusy(false); setPairing(null); setReview(null); setInvitation(''); setError(''); setStatus('');
+      setAddress(address ?? ''); setOpen(true);
+      if (address === null) setError('This device invitation is invalid. Ask for a new link.');
+    });
+    return () => { stopWatching(); controller.current?.abort(); copies.current.cancel(); };
   }, []);
 
   function stop() {
@@ -91,13 +89,12 @@ export default function DeviceTransfer({ workspace, store, onImported }: Props) 
           },
         });
       } else {
-        const value = address.trim();
-        const destination = value.startsWith('tc') ? value : decodeURIComponent(new URL(value).hash.replace(/^#transfer=/, ''));
+        const destination = parseTransferAddress(address);
         await sendTransfer(destination, exportBackup(latest.current.workspace), options);
       }
       if (active()) setStatus(receiving ? 'Transfer complete. Your library is saved on this device.' : 'Transfer complete. The other device confirmed its import.');
     } catch {
-      if (active()) setError('The transfer could not finish. Your existing prompts are kept. Try a new invitation or use a JSON backup. If you already applied the import, it remains saved.');
+      if (active()) setError('The transfer could not finish. Your existing prompts are kept. Try a new invitation, reload this page, or use a JSON backup. If you already applied the import, it remains saved.');
     } finally {
       if (active()) { controller.current = null; setBusy(false); setPairing(null); setReview(null); setInvitation(''); }
     }

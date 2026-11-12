@@ -12,6 +12,7 @@ export type TailcatRuntime = {
 type GoRuntime = { importObject: WebAssembly.Imports; run(instance: WebAssembly.Instance): Promise<void> };
 type TailcatGlobals = typeof globalThis & Partial<TailcatRuntime> & { Go?: new () => GoRuntime; onTailcatReady?: () => void };
 let loading: Promise<TailcatRuntime> | undefined;
+// shortcut: upstream retains JS callbacks; isolate the runtime if repeated transfers cause memory pressure.
 
 // Load the pinned local runtime only after an explicit transfer action.
 export function loadTailcat(): Promise<TailcatRuntime> {

@@ -18,7 +18,7 @@ Tailcat source revision and output hashes are in `personal-ui/public/tailcat/pro
 
 ## Loader contract
 
-Load the local `wasm_exec.js` script, create `new Go()`, and decompress `main.wasm.gz` with `DecompressionStream('gzip')`. Instantiate the resulting module with the Go import object. Set `globalThis.onTailcatReady` before running it; that callback signals that `tailcatListen` and `tailcatDial` are available. Use the app's configured base path for both asset URLs.
+Load the local `wasm_exec.js` script and create `new Go()`. Fetch automatically decompresses responses with `Content-Encoding: gzip` (as served by Astro); use that response body directly. Otherwise decompress the raw `main.wasm.gz` bytes with `DecompressionStream('gzip')` (as on GitHub Pages). Instantiate the resulting module with the Go import object. Set `globalThis.onTailcatReady` before running it; that callback signals that `tailcatListen` and `tailcatDial` are available. Use the app's configured base path for both asset URLs.
 
 The module runs indefinitely after registering its browser bridge. A completed or cancelled transfer must close its listener/connections; it does not terminate the shared Go runtime. The upstream bridge allocates JavaScript callbacks for connections, so repeated long-lived use should be checked for memory growth before treating this experimental implementation as a continuous sync service.
 

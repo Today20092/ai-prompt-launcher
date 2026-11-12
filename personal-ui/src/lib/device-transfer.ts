@@ -3,6 +3,29 @@ export const TRANSFER_LIMIT = 4 * 1024 * 1024;
 const derpMapURL = 'https://tailcat.dev/derpmap.json';
 type Options = { signal: AbortSignal; onPaired: (code: string) => Promise<void>; onStatus: (status: string) => void };
 type ReceiveOptions = Options & { onInvitation: (address: string) => void; onBackup: (raw: string) => Promise<void> };
+
+export function transferInvitationLink(address: string): string {
+  const url = new URL(window.location.href);
+  url.search = ''; url.hash = `transfer=${encodeURIComponent(address)}`;
+  return url.href;
+}
+export function parseTransferAddress(value: string): string {
+  const trimmed = value.trim();
+  return trimmed.startsWith('tc') ? trimmed : decodeURIComponent(new URL(trimmed).hash.replace(/^#transfer=/, ''));
+}
+export function watchTransferInvitation(receive: (address: string | null) => void): () => void {
+  const consume = () => {
+    const hash = window.location.hash;
+    if (!hash.startsWith('#transfer=')) return;
+    let address: string | null = null;
+    try { address = decodeURIComponent(hash.slice(10)); } catch { /* Malformed invitations clear any earlier recipient. */ }
+    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    receive(address);
+  };
+  consume();
+  window.addEventListener('hashchange', consume);
+  return () => window.removeEventListener('hashchange', consume);
+}
 function session(options: Options) {
   const controller = new AbortController(), signal = controller.signal;
   let connection: TailcatConnection | undefined, listener: TailcatListener | undefined;

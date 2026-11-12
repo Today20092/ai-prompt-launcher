@@ -33,7 +33,7 @@ The [upstream browser bridge](https://github.com/tailscale/tailcat/blob/e00cdde6
 - `tailcatDial({ addr, derpMapURL })` returning a connection.
 - Connection `read`, `write`, `closeWrite`, and `close`; pull-based reads supply stream backpressure.
 
-The receiving device creates the listener and displays its capability address as a QR/link for the sender. Both confirm before prompt bytes are sent. Close the listener after admitting one connection; reject subsequent connections, expire idle invitations, and close pending connections on cancellation. Application acknowledgement must distinguish validated import from transport EOF.
+The receiving device creates the listener and displays its capability address as a QR/link for the sender. Both confirm before prompt bytes are sent. Admit one connection and reject subsequent connections; close the listener when the session ends (closing its server earlier would interrupt its accepted stream). Expire idle invitations and close pending connections on cancellation. Application acknowledgement must distinguish validated import from transport EOF.
 
 Tailcat's [repository](https://github.com/tailscale/tailcat) offers free rate-limited DERP relays at the canonical map `https://tailcat.dev/derpmap.json`; the upstream browser app supports fetching it cross-origin. Verify actual relay access, rate limits and intended embedded usage before release. No paid relay fallback. Show a recoverable error and keep backup export/import available during relay outages.
 
