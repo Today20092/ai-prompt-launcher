@@ -1,0 +1,538 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-12T16:26:59.370Z",
+  "title": "Design System: Promptroom",
+  "extensions": {
+    "colorMeta": {
+      "background": {
+        "role": "neutral",
+        "displayName": "Warm Paper",
+        "canonical": "#faf9f6",
+        "tonalRamp": [
+          "oklch(from #faf9f6 15% calc(c * 0.35) h)",
+          "oklch(from #faf9f6 26% calc(c * 0.6) h)",
+          "oklch(from #faf9f6 38% calc(c * 0.8) h)",
+          "oklch(from #faf9f6 49% calc(c * 1) h)",
+          "oklch(from #faf9f6 61% calc(c * 1) h)",
+          "oklch(from #faf9f6 72% calc(c * 0.8) h)",
+          "oklch(from #faf9f6 84% calc(c * 0.55) h)",
+          "oklch(from #faf9f6 95% calc(c * 0.25) h)"
+        ]
+      },
+      "foreground": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#262522",
+        "tonalRamp": [
+          "oklch(from #262522 15% calc(c * 0.35) h)",
+          "oklch(from #262522 26% calc(c * 0.6) h)",
+          "oklch(from #262522 38% calc(c * 0.8) h)",
+          "oklch(from #262522 49% calc(c * 1) h)",
+          "oklch(from #262522 61% calc(c * 1) h)",
+          "oklch(from #262522 72% calc(c * 0.8) h)",
+          "oklch(from #262522 84% calc(c * 0.55) h)",
+          "oklch(from #262522 95% calc(c * 0.25) h)"
+        ]
+      },
+      "primary": {
+        "role": "primary",
+        "displayName": "Workbench Violet",
+        "canonical": "#5144b8",
+        "tonalRamp": [
+          "oklch(from #5144b8 15% calc(c * 0.35) h)",
+          "oklch(from #5144b8 26% calc(c * 0.6) h)",
+          "oklch(from #5144b8 38% calc(c * 0.8) h)",
+          "oklch(from #5144b8 49% calc(c * 1) h)",
+          "oklch(from #5144b8 61% calc(c * 1) h)",
+          "oklch(from #5144b8 72% calc(c * 0.8) h)",
+          "oklch(from #5144b8 84% calc(c * 0.55) h)",
+          "oklch(from #5144b8 95% calc(c * 0.25) h)"
+        ]
+      },
+      "primary-foreground": {
+        "role": "primary",
+        "displayName": "primary foreground",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "oklch(from #ffffff 15% calc(c * 0.35) h)",
+          "oklch(from #ffffff 26% calc(c * 0.6) h)",
+          "oklch(from #ffffff 38% calc(c * 0.8) h)",
+          "oklch(from #ffffff 49% calc(c * 1) h)",
+          "oklch(from #ffffff 61% calc(c * 1) h)",
+          "oklch(from #ffffff 72% calc(c * 0.8) h)",
+          "oklch(from #ffffff 84% calc(c * 0.55) h)",
+          "oklch(from #ffffff 95% calc(c * 0.25) h)"
+        ]
+      },
+      "secondary": {
+        "role": "secondary",
+        "displayName": "Pale Lavender",
+        "canonical": "#eeebfb",
+        "tonalRamp": [
+          "oklch(from #eeebfb 15% calc(c * 0.35) h)",
+          "oklch(from #eeebfb 26% calc(c * 0.6) h)",
+          "oklch(from #eeebfb 38% calc(c * 0.8) h)",
+          "oklch(from #eeebfb 49% calc(c * 1) h)",
+          "oklch(from #eeebfb 61% calc(c * 1) h)",
+          "oklch(from #eeebfb 72% calc(c * 0.8) h)",
+          "oklch(from #eeebfb 84% calc(c * 0.55) h)",
+          "oklch(from #eeebfb 95% calc(c * 0.25) h)"
+        ]
+      },
+      "secondary-foreground": {
+        "role": "secondary",
+        "displayName": "secondary foreground",
+        "canonical": "#403487",
+        "tonalRamp": [
+          "oklch(from #403487 15% calc(c * 0.35) h)",
+          "oklch(from #403487 26% calc(c * 0.6) h)",
+          "oklch(from #403487 38% calc(c * 0.8) h)",
+          "oklch(from #403487 49% calc(c * 1) h)",
+          "oklch(from #403487 61% calc(c * 1) h)",
+          "oklch(from #403487 72% calc(c * 0.8) h)",
+          "oklch(from #403487 84% calc(c * 0.55) h)",
+          "oklch(from #403487 95% calc(c * 0.25) h)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Soft Stone",
+        "canonical": "#f0efeb",
+        "tonalRamp": [
+          "oklch(from #f0efeb 15% calc(c * 0.35) h)",
+          "oklch(from #f0efeb 26% calc(c * 0.6) h)",
+          "oklch(from #f0efeb 38% calc(c * 0.8) h)",
+          "oklch(from #f0efeb 49% calc(c * 1) h)",
+          "oklch(from #f0efeb 61% calc(c * 1) h)",
+          "oklch(from #f0efeb 72% calc(c * 0.8) h)",
+          "oklch(from #f0efeb 84% calc(c * 0.55) h)",
+          "oklch(from #f0efeb 95% calc(c * 0.25) h)"
+        ]
+      },
+      "muted-foreground": {
+        "role": "neutral",
+        "displayName": "muted foreground",
+        "canonical": "#68655f",
+        "tonalRamp": [
+          "oklch(from #68655f 15% calc(c * 0.35) h)",
+          "oklch(from #68655f 26% calc(c * 0.6) h)",
+          "oklch(from #68655f 38% calc(c * 0.8) h)",
+          "oklch(from #68655f 49% calc(c * 1) h)",
+          "oklch(from #68655f 61% calc(c * 1) h)",
+          "oklch(from #68655f 72% calc(c * 0.8) h)",
+          "oklch(from #68655f 84% calc(c * 0.55) h)",
+          "oklch(from #68655f 95% calc(c * 0.25) h)"
+        ]
+      },
+      "popover": {
+        "role": "neutral",
+        "displayName": "White Surface",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "oklch(from #ffffff 15% calc(c * 0.35) h)",
+          "oklch(from #ffffff 26% calc(c * 0.6) h)",
+          "oklch(from #ffffff 38% calc(c * 0.8) h)",
+          "oklch(from #ffffff 49% calc(c * 1) h)",
+          "oklch(from #ffffff 61% calc(c * 1) h)",
+          "oklch(from #ffffff 72% calc(c * 0.8) h)",
+          "oklch(from #ffffff 84% calc(c * 0.55) h)",
+          "oklch(from #ffffff 95% calc(c * 0.25) h)"
+        ]
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Stone Line",
+        "canonical": "#d7d4ce",
+        "tonalRamp": [
+          "oklch(from #d7d4ce 15% calc(c * 0.35) h)",
+          "oklch(from #d7d4ce 26% calc(c * 0.6) h)",
+          "oklch(from #d7d4ce 38% calc(c * 0.8) h)",
+          "oklch(from #d7d4ce 49% calc(c * 1) h)",
+          "oklch(from #d7d4ce 61% calc(c * 1) h)",
+          "oklch(from #d7d4ce 72% calc(c * 0.8) h)",
+          "oklch(from #d7d4ce 84% calc(c * 0.55) h)",
+          "oklch(from #d7d4ce 95% calc(c * 0.25) h)"
+        ]
+      },
+      "input": {
+        "role": "neutral",
+        "displayName": "input",
+        "canonical": "#858178",
+        "tonalRamp": [
+          "oklch(from #858178 15% calc(c * 0.35) h)",
+          "oklch(from #858178 26% calc(c * 0.6) h)",
+          "oklch(from #858178 38% calc(c * 0.8) h)",
+          "oklch(from #858178 49% calc(c * 1) h)",
+          "oklch(from #858178 61% calc(c * 1) h)",
+          "oklch(from #858178 72% calc(c * 0.8) h)",
+          "oklch(from #858178 84% calc(c * 0.55) h)",
+          "oklch(from #858178 95% calc(c * 0.25) h)"
+        ]
+      },
+      "ring": {
+        "role": "primary",
+        "displayName": "Focus Violet",
+        "canonical": "#6856d5",
+        "tonalRamp": [
+          "oklch(from #6856d5 15% calc(c * 0.35) h)",
+          "oklch(from #6856d5 26% calc(c * 0.6) h)",
+          "oklch(from #6856d5 38% calc(c * 0.8) h)",
+          "oklch(from #6856d5 49% calc(c * 1) h)",
+          "oklch(from #6856d5 61% calc(c * 1) h)",
+          "oklch(from #6856d5 72% calc(c * 0.8) h)",
+          "oklch(from #6856d5 84% calc(c * 0.55) h)",
+          "oklch(from #6856d5 95% calc(c * 0.25) h)"
+        ]
+      },
+      "destructive": {
+        "role": "status",
+        "displayName": "destructive",
+        "canonical": "#b32e2e",
+        "tonalRamp": [
+          "oklch(from #b32e2e 15% calc(c * 0.35) h)",
+          "oklch(from #b32e2e 26% calc(c * 0.6) h)",
+          "oklch(from #b32e2e 38% calc(c * 0.8) h)",
+          "oklch(from #b32e2e 49% calc(c * 1) h)",
+          "oklch(from #b32e2e 61% calc(c * 1) h)",
+          "oklch(from #b32e2e 72% calc(c * 0.8) h)",
+          "oklch(from #b32e2e 84% calc(c * 0.55) h)",
+          "oklch(from #b32e2e 95% calc(c * 0.25) h)"
+        ]
+      },
+      "dark-background": {
+        "role": "neutral",
+        "displayName": "Charcoal",
+        "canonical": "#1b1a20",
+        "tonalRamp": [
+          "oklch(from #1b1a20 15% calc(c * 0.35) h)",
+          "oklch(from #1b1a20 26% calc(c * 0.6) h)",
+          "oklch(from #1b1a20 38% calc(c * 0.8) h)",
+          "oklch(from #1b1a20 49% calc(c * 1) h)",
+          "oklch(from #1b1a20 61% calc(c * 1) h)",
+          "oklch(from #1b1a20 72% calc(c * 0.8) h)",
+          "oklch(from #1b1a20 84% calc(c * 0.55) h)",
+          "oklch(from #1b1a20 95% calc(c * 0.25) h)"
+        ]
+      },
+      "dark-foreground": {
+        "role": "neutral",
+        "displayName": "Pale Ink",
+        "canonical": "#eeedf3",
+        "tonalRamp": [
+          "oklch(from #eeedf3 15% calc(c * 0.35) h)",
+          "oklch(from #eeedf3 26% calc(c * 0.6) h)",
+          "oklch(from #eeedf3 38% calc(c * 0.8) h)",
+          "oklch(from #eeedf3 49% calc(c * 1) h)",
+          "oklch(from #eeedf3 61% calc(c * 1) h)",
+          "oklch(from #eeedf3 72% calc(c * 0.8) h)",
+          "oklch(from #eeedf3 84% calc(c * 0.55) h)",
+          "oklch(from #eeedf3 95% calc(c * 0.25) h)"
+        ]
+      },
+      "dark-primary": {
+        "role": "primary",
+        "displayName": "Lavender",
+        "canonical": "#b4a8ff",
+        "tonalRamp": [
+          "oklch(from #b4a8ff 15% calc(c * 0.35) h)",
+          "oklch(from #b4a8ff 26% calc(c * 0.6) h)",
+          "oklch(from #b4a8ff 38% calc(c * 0.8) h)",
+          "oklch(from #b4a8ff 49% calc(c * 1) h)",
+          "oklch(from #b4a8ff 61% calc(c * 1) h)",
+          "oklch(from #b4a8ff 72% calc(c * 0.8) h)",
+          "oklch(from #b4a8ff 84% calc(c * 0.55) h)",
+          "oklch(from #b4a8ff 95% calc(c * 0.25) h)"
+        ]
+      },
+      "dark-primary-foreground": {
+        "role": "primary",
+        "displayName": "dark primary foreground",
+        "canonical": "#21194c",
+        "tonalRamp": [
+          "oklch(from #21194c 15% calc(c * 0.35) h)",
+          "oklch(from #21194c 26% calc(c * 0.6) h)",
+          "oklch(from #21194c 38% calc(c * 0.8) h)",
+          "oklch(from #21194c 49% calc(c * 1) h)",
+          "oklch(from #21194c 61% calc(c * 1) h)",
+          "oklch(from #21194c 72% calc(c * 0.8) h)",
+          "oklch(from #21194c 84% calc(c * 0.55) h)",
+          "oklch(from #21194c 95% calc(c * 0.25) h)"
+        ]
+      },
+      "dark-secondary": {
+        "role": "secondary",
+        "displayName": "Deep Lavender Charcoal",
+        "canonical": "#302b45",
+        "tonalRamp": [
+          "oklch(from #302b45 15% calc(c * 0.35) h)",
+          "oklch(from #302b45 26% calc(c * 0.6) h)",
+          "oklch(from #302b45 38% calc(c * 0.8) h)",
+          "oklch(from #302b45 49% calc(c * 1) h)",
+          "oklch(from #302b45 61% calc(c * 1) h)",
+          "oklch(from #302b45 72% calc(c * 0.8) h)",
+          "oklch(from #302b45 84% calc(c * 0.55) h)",
+          "oklch(from #302b45 95% calc(c * 0.25) h)"
+        ]
+      },
+      "dark-secondary-foreground": {
+        "role": "secondary",
+        "displayName": "dark secondary foreground",
+        "canonical": "#d6ceff",
+        "tonalRamp": [
+          "oklch(from #d6ceff 15% calc(c * 0.35) h)",
+          "oklch(from #d6ceff 26% calc(c * 0.6) h)",
+          "oklch(from #d6ceff 38% calc(c * 0.8) h)",
+          "oklch(from #d6ceff 49% calc(c * 1) h)",
+          "oklch(from #d6ceff 61% calc(c * 1) h)",
+          "oklch(from #d6ceff 72% calc(c * 0.8) h)",
+          "oklch(from #d6ceff 84% calc(c * 0.55) h)",
+          "oklch(from #d6ceff 95% calc(c * 0.25) h)"
+        ]
+      },
+      "dark-accent-foreground": {
+        "role": "secondary",
+        "displayName": "dark accent foreground",
+        "canonical": "#e0d9ff",
+        "tonalRamp": [
+          "oklch(from #e0d9ff 15% calc(c * 0.35) h)",
+          "oklch(from #e0d9ff 26% calc(c * 0.6) h)",
+          "oklch(from #e0d9ff 38% calc(c * 0.8) h)",
+          "oklch(from #e0d9ff 49% calc(c * 1) h)",
+          "oklch(from #e0d9ff 61% calc(c * 1) h)",
+          "oklch(from #e0d9ff 72% calc(c * 0.8) h)",
+          "oklch(from #e0d9ff 84% calc(c * 0.55) h)",
+          "oklch(from #e0d9ff 95% calc(c * 0.25) h)"
+        ]
+      },
+      "dark-muted": {
+        "role": "neutral",
+        "displayName": "dark muted",
+        "canonical": "#26242c",
+        "tonalRamp": [
+          "oklch(from #26242c 15% calc(c * 0.35) h)",
+          "oklch(from #26242c 26% calc(c * 0.6) h)",
+          "oklch(from #26242c 38% calc(c * 0.8) h)",
+          "oklch(from #26242c 49% calc(c * 1) h)",
+          "oklch(from #26242c 61% calc(c * 1) h)",
+          "oklch(from #26242c 72% calc(c * 0.8) h)",
+          "oklch(from #26242c 84% calc(c * 0.55) h)",
+          "oklch(from #26242c 95% calc(c * 0.25) h)"
+        ]
+      },
+      "dark-muted-foreground": {
+        "role": "neutral",
+        "displayName": "dark muted foreground",
+        "canonical": "#b1adb9",
+        "tonalRamp": [
+          "oklch(from #b1adb9 15% calc(c * 0.35) h)",
+          "oklch(from #b1adb9 26% calc(c * 0.6) h)",
+          "oklch(from #b1adb9 38% calc(c * 0.8) h)",
+          "oklch(from #b1adb9 49% calc(c * 1) h)",
+          "oklch(from #b1adb9 61% calc(c * 1) h)",
+          "oklch(from #b1adb9 72% calc(c * 0.8) h)",
+          "oklch(from #b1adb9 84% calc(c * 0.55) h)",
+          "oklch(from #b1adb9 95% calc(c * 0.25) h)"
+        ]
+      },
+      "dark-border": {
+        "role": "neutral",
+        "displayName": "dark border",
+        "canonical": "#48444f",
+        "tonalRamp": [
+          "oklch(from #48444f 15% calc(c * 0.35) h)",
+          "oklch(from #48444f 26% calc(c * 0.6) h)",
+          "oklch(from #48444f 38% calc(c * 0.8) h)",
+          "oklch(from #48444f 49% calc(c * 1) h)",
+          "oklch(from #48444f 61% calc(c * 1) h)",
+          "oklch(from #48444f 72% calc(c * 0.8) h)",
+          "oklch(from #48444f 84% calc(c * 0.55) h)",
+          "oklch(from #48444f 95% calc(c * 0.25) h)"
+        ]
+      },
+      "dark-input": {
+        "role": "neutral",
+        "displayName": "dark input",
+        "canonical": "#7f7a8a",
+        "tonalRamp": [
+          "oklch(from #7f7a8a 15% calc(c * 0.35) h)",
+          "oklch(from #7f7a8a 26% calc(c * 0.6) h)",
+          "oklch(from #7f7a8a 38% calc(c * 0.8) h)",
+          "oklch(from #7f7a8a 49% calc(c * 1) h)",
+          "oklch(from #7f7a8a 61% calc(c * 1) h)",
+          "oklch(from #7f7a8a 72% calc(c * 0.8) h)",
+          "oklch(from #7f7a8a 84% calc(c * 0.55) h)",
+          "oklch(from #7f7a8a 95% calc(c * 0.25) h)"
+        ]
+      },
+      "dark-destructive": {
+        "role": "status",
+        "displayName": "dark destructive",
+        "canonical": "#ffaaaa",
+        "tonalRamp": [
+          "oklch(from #ffaaaa 15% calc(c * 0.35) h)",
+          "oklch(from #ffaaaa 26% calc(c * 0.6) h)",
+          "oklch(from #ffaaaa 38% calc(c * 0.8) h)",
+          "oklch(from #ffaaaa 49% calc(c * 1) h)",
+          "oklch(from #ffaaaa 61% calc(c * 1) h)",
+          "oklch(from #ffaaaa 72% calc(c * 0.8) h)",
+          "oklch(from #ffaaaa 84% calc(c * 0.55) h)",
+          "oklch(from #ffaaaa 95% calc(c * 0.25) h)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "title": {
+        "displayName": "Prompt Title",
+        "purpose": "Active prompt heading on desktop."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Base interface text."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Compact controls and disclosure headings."
+      }
+    },
+    "shadows": [
+      {
+        "name": "selected-prompt-marker",
+        "value": "inset 3px 0 0 var(--primary)",
+        "purpose": "Redundant selected-entry indicator."
+      },
+      {
+        "name": "primary-button",
+        "value": "inset 0 1px rgb(255 255 255 / .16), 0 1px 2px color-mix(in oklab, var(--primary) 24%, transparent)",
+        "purpose": "Subtle control definition."
+      },
+      {
+        "name": "dialog",
+        "value": "0 10px 15px -3px rgb(0 0 0 / .05), 0 4px 6px -4px rgb(0 0 0 / .05)",
+        "purpose": "Registry dialog elevation; backdrop provides the main separation."
+      }
+    ],
+    "motion": [
+      {
+        "name": "dialog-transition",
+        "value": "200ms ease-in-out",
+        "purpose": "Popup scale, opacity, and translation; backdrop transitions."
+      },
+      {
+        "name": "reduced-motion",
+        "value": ".01ms",
+        "purpose": "Global animation and transition duration under prefers-reduced-motion: reduce."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "narrow-phone-max",
+        "value": "360px"
+      },
+      {
+        "name": "dialog-desktop-min",
+        "value": "640px"
+      },
+      {
+        "name": "stacked-workbench-max",
+        "value": "760px"
+      },
+      {
+        "name": "short-dialog-max-height",
+        "value": "480px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Default desktop size; phone targets expand to at least 44px.",
+      "html": "<button class=\"ds-button-primary\" type=\"button\">Send to T3 Chat</button>",
+      "css": ".ds-button-primary{font-family:\"Geist Variable\",system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 11px;border:1px solid var(--primary,#5144b8);border-radius:12px;background:var(--primary,#5144b8);color:var(--primary-foreground,#ffffff);font-size:14px;font-weight:500;cursor:pointer;transition:box-shadow .15s;box-shadow:inset 0 1px rgb(255 255 255 / .16),0 1px 2px color-mix(in oklab,var(--primary,#5144b8) 24%,transparent);}.ds-button-primary:hover{background:color-mix(in oklab,var(--primary,#5144b8) 90%,transparent)}.ds-button-primary:active{box-shadow:none}.ds-button-primary:disabled{opacity:.64;pointer-events:none}.ds-button-primary:focus-visible{outline:3px solid var(--ring,#6856d5);outline-offset:2px}@media(max-width:760px){.ds-button-primary{min-height:44px;height:auto;white-space:normal}}@media(prefers-reduced-motion:reduce){.ds-button-primary{transition-duration:.01ms}}"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Default desktop size; phone targets expand to at least 44px.",
+      "html": "<button class=\"ds-button-outline\" type=\"button\">Copy prompt</button>",
+      "css": ".ds-button-outline{font-family:\"Geist Variable\",system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 11px;border:1px solid var(--input,#858178);border-radius:12px;background:var(--popover,#ffffff);color:var(--foreground,#262522);font-size:14px;font-weight:500;cursor:pointer;transition:box-shadow .15s;box-shadow:0 1px 2px rgb(0 0 0 / .05);}.ds-button-outline:hover{background:var(--accent,#eeebfb)}.ds-button-outline:active{box-shadow:none}.ds-button-outline:disabled{opacity:.64;pointer-events:none}.ds-button-outline:focus-visible{outline:3px solid var(--ring,#6856d5);outline-offset:2px}@media(max-width:760px){.ds-button-outline{min-height:44px;height:auto;white-space:normal}}@media(prefers-reduced-motion:reduce){.ds-button-outline{transition-duration:.01ms}}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Default desktop size; phone targets expand to at least 44px.",
+      "html": "<button class=\"ds-button-secondary\" type=\"button\">Secondary action</button>",
+      "css": ".ds-button-secondary{font-family:\"Geist Variable\",system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 11px;border:1px solid transparent;border-radius:12px;background:var(--secondary,#eeebfb);color:var(--secondary-foreground,#403487);font-size:14px;font-weight:500;cursor:pointer;transition:box-shadow .15s;}.ds-button-secondary:hover{background:color-mix(in oklab,var(--secondary,#eeebfb) 90%,transparent)}.ds-button-secondary:active{box-shadow:none}.ds-button-secondary:disabled{opacity:.64;pointer-events:none}.ds-button-secondary:focus-visible{outline:3px solid var(--ring,#6856d5);outline-offset:2px}@media(max-width:760px){.ds-button-secondary{min-height:44px;height:auto;white-space:normal}}@media(prefers-reduced-motion:reduce){.ds-button-secondary{transition-duration:.01ms}}"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Default desktop size; phone targets expand to at least 44px.",
+      "html": "<button class=\"ds-button-ghost\" type=\"button\">Share</button>",
+      "css": ".ds-button-ghost{font-family:\"Geist Variable\",system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 11px;border:1px solid transparent;border-radius:12px;background:transparent;color:var(--foreground,#262522);font-size:14px;font-weight:500;cursor:pointer;transition:box-shadow .15s;}.ds-button-ghost:hover{background:var(--accent,#eeebfb)}.ds-button-ghost:active{box-shadow:none}.ds-button-ghost:disabled{opacity:.64;pointer-events:none}.ds-button-ghost:focus-visible{outline:3px solid var(--ring,#6856d5);outline-offset:2px}@media(max-width:760px){.ds-button-ghost{min-height:44px;height:auto;white-space:normal}}@media(prefers-reduced-motion:reduce){.ds-button-ghost{transition-duration:.01ms}}"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Outlined field with a visible keyboard focus treatment.",
+      "html": "<label class=\"ds-field\">Prompt name<input class=\"ds-input\" placeholder=\"Name your prompt\"></label>",
+      "css": ".ds-field{font-family:\"Geist Variable\",system-ui,sans-serif;display:grid;gap:8px;font-size:14px;color:var(--foreground,#262522)}.ds-input{font-family:\"Geist Variable\",system-ui,sans-serif;height:32px;padding:0 11px;border:1px solid var(--input,#858178);border-radius:12px;background:var(--background,#faf9f6);color:var(--foreground,#262522);font-size:14px}.ds-input::placeholder{color:var(--muted-foreground,#68655f)}.ds-input:hover{border-color:var(--foreground,#262522)}.ds-input:focus-visible{border-color:var(--ring,#6856d5);box-shadow:0 0 0 3px color-mix(in oklab,var(--ring,#6856d5) 24%,transparent)}.ds-input:focus-visible{outline:3px solid var(--ring,#6856d5);outline-offset:2px}@media(max-width:760px){.ds-input{min-height:44px;font-size:16px}}"
+    },
+    {
+      "name": "Selected Prompt",
+      "kind": "nav",
+      "refersTo": "prompt-selected",
+      "description": "A selected library entry uses fill, border, and an inset marker.",
+      "html": "<nav aria-label=\"Choose a prompt\"><button class=\"ds-prompt\" type=\"button\" aria-current=\"true\"><strong>Grammar corrector</strong><span>Correct your writing while keeping your meaning and voice.</span></button></nav>",
+      "css": ".ds-prompt{font-family:\"Geist Variable\",system-ui,sans-serif;display:flex;flex-direction:column;align-items:flex-start;gap:.4rem;max-width:260px;text-align:left;padding:.85rem;border-radius:12px;border:1px solid var(--primary,#5144b8);background:var(--secondary,#eeebfb);color:var(--foreground,#262522);box-shadow:inset 3px 0 var(--primary,#5144b8);cursor:pointer}.ds-prompt strong{font-size:.875rem;font-weight:600}.ds-prompt span{font-size:.8rem;line-height:1.5;color:var(--muted-foreground,#68655f)}.ds-prompt:hover{background:var(--muted,#f0efeb)}.ds-prompt:focus-visible{outline:3px solid var(--ring,#6856d5);outline-offset:2px}@media(forced-colors:active){.ds-prompt{outline:2px solid Highlight}}"
+    },
+    {
+      "name": "Prompt Preview",
+      "kind": "card",
+      "refersTo": "preview",
+      "description": "Disclosure surface with a character count and selectable wrapped text.",
+      "html": "<details class=\"ds-preview\"><summary>Preview complete prompt <span>Example</span></summary><pre>Correct the following text while keeping its meaning and voice.\n\nYour input appears here.</pre></details>",
+      "css": ".ds-preview{font-family:\"Geist Variable\",system-ui,sans-serif;border:1px solid var(--border,#d7d4ce);border-radius:12px;background:var(--popover,#ffffff);color:var(--foreground,#262522)}.ds-preview summary{cursor:pointer;padding:1rem;font-size:.875rem;font-weight:500}.ds-preview summary span{float:right;font-size:.75rem;color:var(--muted-foreground,#68655f)}.ds-preview summary:hover{background:var(--muted,#f0efeb)}.ds-preview summary:focus-visible{outline:3px solid var(--ring,#6856d5);outline-offset:2px}.ds-preview pre{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;font-size:.875rem;line-height:1.75;padding:1.25rem;border-top:1px solid var(--border,#d7d4ce);margin:0;user-select:text}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Quiet Workbench",
+    "overview": "Promptroom is calm, practical, and focused. Warm neutral surfaces and a limited violet accent frame the user's text. The interface gives saved prompts a stable place beside a spacious editing area; supporting controls stay compact.\n\nThe system is mostly flat, separated by borders and color. Subtle shadows give buttons and dialogs definition. Softly rounded, restrained controls make the workbench approachable without competing with its content. This records the existing `personal-ui/` system, not the original launcher at `/legacy/`.",
+    "keyCharacteristics": [
+      "Warm neutral canvas with violet actions and selection.",
+      "One sans-serif family, with hierarchy carried by size and weight.",
+      "Spacious workspace, compact supporting controls.",
+      "Border-led grouping, gentle corners, and restrained depth.",
+      "Equivalent light and dark themes with visible keyboard focus."
+    ],
+    "rules": [
+      {
+        "name": "The Semantic Pair Rule",
+        "body": "Change background and foreground roles together when switching themes. In light mode, accent matches secondary; in dark mode, accent has its own foreground. Dark focus uses the primary color.",
+        "section": "colors"
+      },
+      {
+        "name": "The Quiet Depth Rule",
+        "body": "Use the existing registry depth for controls and overlays; use borders and surface color for the main workspace.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do use paired semantic colors and the existing light/dark theme mappings.",
+      "Do keep prompt text readable, selectable, and fully wrapped in the preview.",
+      "Do preserve visible focus, phone target sizing, and reduced-motion behavior.",
+      "Do use the existing Base UI registry components with app-level accessibility overrides."
+    ],
+    "donts": [
+      "Don't replace the selected prompt's border and marker with color alone.",
+      "Don't let registry utilities remove the global focus outline.",
+      "Don't obscure inputs with floating launch controls.",
+      "Don't treat the legacy launcher's styling as the current workbench's design system."
+    ]
+  }
+}

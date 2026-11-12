@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, type MouseEvent, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type MouseEvent } from 'react';
 import { flushSync } from 'react-dom';
-import { ArrowUpRight, Copy, Maximize2, Minimize2, Moon, Pencil, Plus, Settings2, Sparkles, Star, Sun } from 'lucide-react';
+import { ArrowUpRight, ChevronDown, Copy, Maximize2, Minimize2, Moon, MoreHorizontal, Pencil, Plus, Settings2, Sparkles, Star, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertAction, AlertDescription } from '@/components/ui/alert';
 import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -9,10 +9,10 @@ import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui
 import { Form } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Item } from '@/components/ui/item';
+import { Popover, PopoverPopup, PopoverTitle, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Toggle } from '@/components/ui/toggle';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { renderPrompt, type PromptTemplate } from '@/lib/prompt';
 import { newWorkspace, updateTemplate, WorkspaceStore, type Workspace } from '@/lib/workspace';
 import { chatApps, type AppName } from '@/lib/chat-apps';
@@ -34,15 +34,11 @@ const searchLimitChoices: Choice[] = [{ value: 'default', label: 'T3 default' },
 const appChoices: Choice[] = chatApps.map(item => ({ value: item.name, label: item.name }));
 
 // Base UI Select shows the raw value unless it is given labelled items.
-function ChoiceSelect({ id, value, items, onChange, disabled, placeholder }: { id: string; value: string | null; items: Choice[]; onChange: (value: string) => void; disabled?: boolean; placeholder?: string }) {
+function ChoiceSelect({ id, value, items, onChange, disabled, placeholder, describedBy }: { id: string; value: string | null; items: Choice[]; onChange: (value: string) => void; disabled?: boolean; placeholder?: string; describedBy?: string }) {
   return <Select items={items} value={value} disabled={disabled} onValueChange={next => { if (next !== null) onChange(next); }}>
-    <SelectTrigger id={id}><SelectValue placeholder={placeholder} /></SelectTrigger>
+    <SelectTrigger id={id} aria-describedby={describedBy}><SelectValue placeholder={placeholder} /></SelectTrigger>
     <SelectContent><SelectGroup>{items.map(item => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}</SelectGroup></SelectContent>
   </Select>;
-}
-
-function Tip({ label, children }: { label: string; children: ReactElement }) {
-  return <Tooltip><TooltipTrigger render={children} /><TooltipContent>{label}</TooltipContent></Tooltip>;
 }
 
 export default function Workbench() {
@@ -70,10 +66,13 @@ export default function Workbench() {
   const [draft, setDraft] = useState({ title: '', description: '', body: '' });
   const [saveAttempted, setSaveAttempted] = useState(false);
   const opener = useRef<HTMLButtonElement | null>(null);
+  const workspaceTrigger = useRef<HTMLButtonElement | null>(null);
+  const promptActionsTrigger = useRef<HTMLButtonElement | null>(null);
   const fields = useRef<Record<string, HTMLTextAreaElement | null>>({});
-  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewChoices, setPreviewChoices] = useState<Record<string, boolean>>({});
   const previewText = useRef<HTMLPreElement>(null);
   const template = received ?? templates.find(item => item.id === selected) ?? templates[0];
+  const previewOpen = previewChoices[template.id] ?? true;
   const values = inputs[template.id] ?? {};
   const rendered = renderPrompt(template.body, values);
   const appName = template.chatApp ?? workspace.preferredApp;
@@ -84,6 +83,10 @@ export default function Workbench() {
   const handoff = app.name === 'T3 Chat' ? t3Handoff(rendered.text, t3Options) : null;
   const directT3 = handoff?.direct ?? false;
   useEffect(() => { generation.current++; operations.current.cancel(); setBusy(false); }, [template, rendered.text, appName]);
+
+  function setPreviewOpen(open: boolean) {
+    setPreviewChoices(old => ({ ...old, [template.id]: open }));
+  }
 
   function setT3Options(change: Partial<T3Options>) {
     changeTemplate({ ...template, t3Options: { ...t3Options, ...change } });
@@ -149,7 +152,7 @@ export default function Workbench() {
   }
 
   function openEditor(event: MouseEvent<HTMLButtonElement>, isNew = false) {
-    opener.current = event.currentTarget;
+    opener.current = isNew ? event.currentTarget : promptActionsTrigger.current;
     setCreating(isNew);
     setDraft(isNew ? { title: '', description: '', body: 'Help me with the following:\n\n{{text}}' } : template);
     setSaveAttempted(false);
@@ -177,6 +180,7 @@ export default function Workbench() {
     };
     if (creating) { setReceived(null); setReceivedStatus(''); persist(updateTemplate(workspace, next)); }
     else changeTemplate(next);
+    setPreviewChoices(old => ({ ...old, [next.id]: true }));
     setAttempted(false);
     setManualCopy(false);
     setEditing(false);
@@ -236,9 +240,15 @@ export default function Workbench() {
     <header className="app-header">
       <a href="#workspace" className="brand"><Sparkles aria-hidden="true" />Promptroom</a>
       <div className="header-actions">
-        <DeviceTransfer workspace={workspace} store={store.current} onImported={next => { setWorkspace(next); setSavingStatus(''); }} />
-        <Tip label="Preferences"><Button variant="ghost" size="icon" disabled={!ready} aria-label="Preferences" onClick={event => { opener.current = event.currentTarget; setPreferencesOpen(true); }}><Settings2 /></Button></Tip>
-        <Button variant="outline" disabled={!ready} onClick={event => openEditor(event, true)}><Plus data-icon="inline-start" />New prompt</Button>
+        <div className="workspace-tools"><Popover>
+          <PopoverTrigger ref={workspaceTrigger} className="tools-trigger" aria-label="Workspace" render={<Button variant="ghost" />}><Settings2 /><span className="workspace-tools-label">Workspace</span><ChevronDown /></PopoverTrigger>
+          <PopoverPopup align="end" className="tools-popup" portalProps={{ keepMounted: true }}>
+            <PopoverTitle className="sr-only">Workspace actions</PopoverTitle><div className="tools-actions">
+            <DeviceTransfer finalFocus={workspaceTrigger} workspace={workspace} store={store.current} onImported={next => { setWorkspace(next); setSavingStatus(''); }} />
+            <Button variant="ghost" disabled={!ready} onClick={() => { opener.current = workspaceTrigger.current; setPreferencesOpen(true); }}><Settings2 />Preferences</Button>
+          </div></PopoverPopup>
+        </Popover></div>
+        <Button variant="outline" aria-label="New prompt" disabled={!ready} onClick={event => openEditor(event, true)}><Plus data-icon="inline-start" /><span className="new-prompt-label">New prompt</span></Button>
       </div>
     </header>
     {!ready && <p role="status" className="storage-status">Loading your saved workspace...</p>}
@@ -254,18 +264,24 @@ export default function Workbench() {
       </aside>
       <section id="workspace" className="workspace" aria-labelledby="prompt-title" tabIndex={-1}>
         <div role="status" className="empty:sr-only">{receivedStatus && <Alert className="my-3" variant="info" role="none"><AlertDescription>{receivedStatus}</AlertDescription><AlertAction className="flex-wrap">{received && <Button variant="outline" onClick={saveCopy}>Save a copy</Button>}<Button variant="ghost" onClick={() => { setReceived(null); setReceivedStatus(''); setStatus(''); setManualCopy(false); }}>Return to saved workspace</Button></AlertAction></Alert>}</div>
-        <div className="mobile-picker">
-          <Field><FieldLabel htmlFor="prompt-picker">Your prompts</FieldLabel>
-            <ChoiceSelect id="prompt-picker" value={received ? null : selected} placeholder="Temporary received prompt" onChange={switchTemplate} items={templates.map(item => ({ value: item.id, label: `${workspace.favorites.includes(item.id) ? '★ ' : ''}${templateLabel(item, templates)}` }))} />
-          </Field>
-        </div>
         <div className="workspace-heading">
-          <div className="workspace-heading-text"><h1 id="prompt-title" className={cn(!received && 'max-[760px]:sr-only')}>{templateLabel(template, templates)}</h1>{template.description && <p className="muted">{template.description}</p>}</div>
-          <div className="prompt-actions">
-            <ShareControls key={template.id} template={template} values={values} onReceived={receive} />
-            <Tip label={favorite ? 'Remove favorite' : 'Add favorite'}><Toggle disabled={Boolean(received)} aria-label={favorite ? 'Remove favorite' : 'Add favorite'} pressed={favorite} onPressedChange={() => persist({ ...workspace, favorites: favorite ? workspace.favorites.filter(id => id !== template.id) : [...workspace.favorites, template.id] })}><Star fill={favorite ? 'currentColor' : 'none'} /></Toggle></Tip>
-            <Tip label="Edit template"><Button variant="ghost" size="icon" aria-label="Edit template" onClick={event => openEditor(event)}><Pencil /></Button></Tip>
+          <div className="workspace-heading-text">
+            <div className="mobile-picker">
+              <Field><FieldLabel htmlFor="prompt-picker">Your prompts</FieldLabel>
+                <ChoiceSelect id="prompt-picker" value={received ? null : selected} placeholder="Temporary received prompt" onChange={switchTemplate} items={templates.map(item => ({ value: item.id, label: `${workspace.favorites.includes(item.id) ? '★ ' : ''}${templateLabel(item, templates)}` }))} />
+              </Field>
+            </div>
+            <h1 id="prompt-title" className={cn(!received && 'max-[760px]:sr-only')}>{templateLabel(template, templates)}</h1>{template.description && <p className="muted">{template.description}</p>}
           </div>
+          <div className="prompt-tools"><Popover>
+            <PopoverTrigger ref={promptActionsTrigger} className="tools-trigger" aria-label="Prompt actions" render={<Button variant="ghost" />}><MoreHorizontal /><span className="prompt-tools-label">Prompt actions</span></PopoverTrigger>
+            <PopoverPopup align="end" className="tools-popup" portalProps={{ keepMounted: true }}>
+              <PopoverTitle className="sr-only">Prompt actions</PopoverTitle><div className="tools-actions prompt-actions">
+            <ShareControls finalFocus={promptActionsTrigger} key={template.id} template={template} values={values} onReceived={receive} />
+            <Toggle disabled={Boolean(received)} aria-label={favorite ? 'Remove favorite' : 'Add favorite'} pressed={favorite} onPressedChange={() => persist({ ...workspace, favorites: favorite ? workspace.favorites.filter(id => id !== template.id) : [...workspace.favorites, template.id] })}><Star fill={favorite ? 'currentColor' : 'none'} />{favorite ? 'Remove favorite' : 'Add favorite'}</Toggle>
+            <Button variant="ghost" aria-label="Edit template" onClick={event => openEditor(event)}><Pencil />Edit template</Button>
+            </div></PopoverPopup>
+          </Popover></div>
         </div>
         <div className="flex flex-col gap-5">
           {rendered.variables.map((name, index) => {
@@ -273,9 +289,10 @@ export default function Workbench() {
             return <Field key={`${template.id}-${name}`} invalid={invalid}>
               <div className="field-heading"><FieldLabel htmlFor={`variable-${index}`}>{variableLabel(name)}</FieldLabel><span className="muted required-label">Required</span></div>
               <Textarea ref={element => { fields.current[name] = element; }} id={`variable-${index}`} rows={name === 'text' ? 7 : 3} className="variable-input" value={values[name] ?? ''}
-                aria-invalid={invalid} aria-required="true" aria-describedby={invalid ? `error-${index}` : undefined}
+                aria-invalid={invalid} aria-required="true" aria-describedby={`input-note-${index}${invalid ? ` error-${index}` : ''}`}
                 placeholder={name === 'text' ? 'Paste your draft or transcript here…' : `Enter ${variableLabel(name)}…`}
                 onChange={event => { setInputs(old => ({ ...old, [template.id]: { ...values, [name]: event.target.value } })); setStatus(''); setManualCopy(false); }} />
+              <FieldDescription id={`input-note-${index}`} className="input-note">Input is temporary and isn't saved.</FieldDescription>
               {invalid && <FieldError match id={`error-${index}`}>Enter {variableLabel(name).toLowerCase()}.</FieldError>}
             </Field>;
           })}
@@ -287,7 +304,8 @@ export default function Workbench() {
         </Collapsible>
         <div className="launch-panel">
           <Field className="app-picker"><FieldLabel htmlFor="chat-app">Chat app</FieldLabel>
-            <ChoiceSelect id="chat-app" value={template.chatApp ?? 'preferred'} items={[{ value: 'preferred', label: `${workspace.preferredApp} (preferred)` }, ...appChoices]} onChange={name => { changeTemplate({ ...template, chatApp: name === 'preferred' ? undefined : name as AppName }); setStatus(''); setManualCopy(false); }} />
+            <ChoiceSelect id="chat-app" describedBy="chat-app-help" value={template.chatApp ?? 'preferred'} items={[{ value: 'preferred', label: `${workspace.preferredApp} (preferred)` }, ...appChoices]} onChange={name => { changeTemplate({ ...template, chatApp: name === 'preferred' ? undefined : name as AppName }); setStatus(''); setManualCopy(false); }} />
+            <FieldDescription id="chat-app-help">The preferred option follows Preferences. Choosing a named app remembers it for this prompt.</FieldDescription>
           </Field>
           {app.name === 'T3 Chat' && <Collapsible key={template.id} className="t3-options">
             <CollapsibleTrigger><span>T3 Chat options</span><span className="muted">Saved for this prompt</span></CollapsibleTrigger>

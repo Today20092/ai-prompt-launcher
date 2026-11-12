@@ -114,6 +114,12 @@
 .brand { display: flex; align-items: center; gap: .65rem; font-size: 1.15rem; font-weight: 650; text-decoration: none; }
 .brand svg { width: 1.25rem; height: 1.25rem; color: var(--primary); }
 .header-actions { display: flex; align-items: center; gap: .5rem; }
+.workspace-tools, .prompt-tools { min-width: 0; }
+.tools-trigger { gap: .375rem; }
+.tools-popup { max-width: calc(100vw - 2rem); }
+.tools-actions { display: flex; flex-direction: column; align-items: stretch; gap: .5rem; min-width: min(12rem, calc(100vw - 4rem)); }
+.tools-actions > button { justify-content: flex-start; min-height: 44px; height: auto; white-space: normal; }
+.prompt-tools { grid-column: 2; grid-row: 1; }
 .workbench { max-width: 1200px; margin: auto; display: grid; grid-template-columns: 260px minmax(0, 1fr); min-height: calc(100dvh - 90px); }
 .library { border-right: 1px solid var(--border); padding: 2rem 1.25rem 2rem 2rem; }
 .library h2 { font-weight: 600; }
@@ -130,9 +136,6 @@
 .workspace-heading-text { display: contents; }
 .workspace-heading h1 { grid-column: 1; grid-row: 1; align-self: center; }
 .workspace-heading p { grid-column: 1 / -1; grid-row: 2; }
-.prompt-actions { display: flex; flex-wrap: nowrap; gap: .5rem; grid-column: 2; grid-row: 1; }
-.prompt-actions button[aria-label] { width: 44px; height: 44px; flex: 0 0 44px; }
-.prompt-actions .share-trigger { min-height: 44px; }
 .workspace-heading h1 { font-size: clamp(1.4rem, 2vw, 1.8rem); letter-spacing: -.035em; font-weight: 650; line-height: 1.25; overflow-wrap: anywhere; }
 .workspace-heading p { margin-top: .5rem; font-size: .9rem; line-height: 1.5; }
 .field-heading { display: flex; align-items: baseline; justify-content: space-between; gap: .75rem; }
@@ -229,19 +232,24 @@
 .t3-options-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; margin-bottom: 1rem; }
 .t3-options-grid [data-slot="select-trigger"] { width: 100%; }
 @media (max-width: 760px) {
-  .app-header { padding: .75rem 1rem; flex-wrap: wrap; }
-  .header-actions { flex-wrap: wrap; max-width: 100%; min-width: 0; }
+  .app-header { padding: .5rem 1rem; gap: .5rem; align-items: flex-start; flex-wrap: wrap; }
+  .brand { font-size: 1rem; gap: .4rem; flex-shrink: 0; }
+  .header-actions { align-items: flex-start; gap: .375rem; max-width: 100%; min-width: 0; }
   .header-actions button { max-width: 100%; white-space: normal; height: auto; }
+  .new-prompt-label, .prompt-tools-label { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .header-actions > button, .prompt-tools > .tools-trigger { width: 44px; min-width: 44px; padding-inline: 0; }
+  .prompt-tools { width: 44px; }
   .workbench { display: block; min-height: auto; }
   .library { display: none; }
-  .workspace { padding: 1.25rem 1rem max(2rem, env(safe-area-inset-bottom)); }
-  .mobile-picker { display: block; margin-bottom: .25rem; }
+  .workspace { padding: 1rem 1rem max(2rem, env(safe-area-inset-bottom)); }
+  .mobile-picker { display: block; grid-column: 1; grid-row: 1; min-width: 0; }
   .mobile-picker [data-slot="select-trigger"] { width: 100%; height: auto; }
   /* The picker is the only visible title on phones, so long names must wrap. */
   .mobile-picker [data-slot="select-value"] { white-space: normal; overflow-wrap: anywhere; }
-  .workspace-heading { margin-bottom: 1rem; }
-  .workspace-heading .prompt-actions { grid-column: 1 / -1; grid-row: 3; justify-content: flex-end; }
-  .launch-panel { padding-top: 1.25rem; margin-top: 1.25rem; }
+  .workspace-heading { align-items: end; margin-bottom: 1rem; gap: .5rem .75rem; }
+  .workspace-heading h1 { grid-column: 1; grid-row: 1; }
+  .workspace-heading p { margin-top: .25rem; }
+  .launch-panel { padding-top: 1rem; margin-top: 1rem; }
   .app-picker { max-width: none; }
   .launch-actions { display: grid; grid-template-columns: 1fr 1fr; }
   .launch-actions button { width: 100%; white-space: normal; height: auto; min-height: 44px; }
@@ -252,6 +260,6 @@
   .t3-options-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 360px) {
-  .brand { font-size: 1rem; gap: .4rem; }
+  .workspace-tools-label { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .launch-actions { grid-template-columns: 1fr; }
 }

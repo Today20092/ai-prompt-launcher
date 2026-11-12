@@ -1,12 +1,15 @@
 // @vitest-environment jsdom
 import { beforeEach, afterEach, expect, test, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import BackupControls from './BackupControls';
 import ShareControls from './ShareControls';
 import Workbench from './Workbench';
 import { exportBackup } from '../lib/backup';
 import { createSnapshot } from '../lib/sharing';
 import { newWorkspace, WorkspaceStore, WORKSPACE_KEY } from '../lib/workspace';
+import { receiveTransfer, sendTransfer } from '../lib/device-transfer';
+
+vi.mock('../lib/device-transfer', async importOriginal => ({ ...await importOriginal<typeof import('../lib/device-transfer')>(), receiveTransfer: vi.fn(), sendTransfer: vi.fn() }));
 
 beforeEach(() => {
   const saved = new Map<string, string>();
@@ -105,6 +108,7 @@ test('provider fallback event opens before clipboard and denied copying shows fu
   const denied = deferred<void>();
   Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: vi.fn((text: string) => { calls.push('copy'); expect(text).toContain(prompt); return denied.promise; }) } });
   render(<Workbench />);
+  fireEvent.click(screen.getByRole('button', { name: /Preview complete prompt/ }));
   fireEvent.change(screen.getByLabelText('Your text'), { target: { value: prompt } });
   fireEvent.click(screen.getByRole('button', { name: 'Open in T3 Chat' }));
   expect(calls).toEqual(['open', 'copy']);
@@ -176,7 +180,109 @@ test('expanding the template editor keeps the same draft, selection and scroll p
   expect(body.value).toBe(text);
   fireEvent.click(screen.getByRole('button', { name: 'Save template' }));
   await screen.findByRole('heading', { name: 'Synthetic long template' });
+  fireEvent.click(screen.getByRole('button', { name: 'Prompt actions' }));
   fireEvent.click(screen.getByRole('button', { name: 'Edit template' }));
   expect(screen.getByLabelText<HTMLTextAreaElement>('Template').value).toBe(text);
   expect(screen.getByRole('button', { name: 'Expand editor' }).getAttribute('aria-expanded')).toBe('false');
+});
+
+test('preview opens on first use, remembers each prompt choice, and reopens after editing', async () => {
+  render(<Workbench />);
+  const preview = () => screen.getByRole('button', { name: /Preview complete prompt/ });
+  expect(preview().getAttribute('aria-expanded')).toBe('true');
+  fireEvent.click(preview());
+  expect(preview().getAttribute('aria-expanded')).toBe('false');
+  fireEvent.click(screen.getByRole('button', { name: /^Transcript cleanup/ }));
+  expect(preview().getAttribute('aria-expanded')).toBe('true');
+  fireEvent.click(screen.getByRole('button', { name: /^Grammar corrector/ }));
+  expect(preview().getAttribute('aria-expanded')).toBe('false');
+  fireEvent.click(screen.getByRole('button', { name: 'Prompt actions' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Edit template' }));
+  fireEvent.change(screen.getByLabelText('Template'), { target: { value: 'Synthetic changed instruction: {{text}}' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Save template' }));
+  await screen.findByText('Synthetic changed instruction: {{text}}');
+  expect(preview().getAttribute('aria-expanded')).toBe('true');
+});
+
+test('temporary input guidance stays associated with the field and its validation error', () => {
+  render(<Workbench />);
+  const input = screen.getByLabelText('Your text');
+  expect(input.getAttribute('aria-describedby')).toContain('input-note-0');
+  expect(document.getElementById('input-note-0')?.textContent).toBe("Input is temporary and isn't saved.");
+  fireEvent.click(screen.getByRole('button', { name: 'Copy prompt' }));
+  expect(input.getAttribute('aria-describedby')).toContain('input-note-0');
+  expect(input.getAttribute('aria-describedby')).toContain('error-0');
+  expect(document.getElementById('error-0')?.textContent).toBe('Enter your text.');
+  expect(document.activeElement).toBe(input);
+  const app = screen.getByRole('combobox', { name: 'Chat app' });
+  expect(app.getAttribute('aria-describedby')).toContain('chat-app-help');
+});
+
+test('management popups expose the original workspace and prompt controls', async () => {
+  render(<Workbench />);
+  const workspace = screen.getByRole('button', { name: 'Workspace' });
+  expect(workspace.getAttribute('aria-expanded')).toBe('false');
+  expect(screen.queryByRole('button', { name: 'Preferences' })).toBeNull();
+  fireEvent.click(workspace);
+  expect(workspace.getAttribute('aria-expanded')).toBe('true');
+  expect(screen.getByRole('button', { name: 'Transfer between devices' })).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Preferences' }));
+  expect(await screen.findByRole('heading', { name: 'Preferences' })).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+  const actions = screen.getByRole('button', { name: 'Prompt actions' });
+  fireEvent.click(actions);
+  expect(actions.getAttribute('aria-expanded')).toBe('true');
+  expect(screen.getByRole('button', { name: 'Share' })).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Add favorite' }));
+  expect(screen.getByRole('button', { name: 'Remove favorite' })).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Edit template' })).toBeTruthy();
+});
+
+test('action popups are portaled and Escape restores their trigger focus', async () => {
+  const view = render(<Workbench />);
+  for (const name of ['Workspace', 'Prompt actions']) {
+    const trigger = screen.getByRole('button', { name });
+    fireEvent.click(trigger);
+    const popup = await screen.findByRole('dialog', { name: name === 'Workspace' ? 'Workspace actions' : name });
+    expect(view.container.contains(popup)).toBe(false);
+    await waitFor(() => expect(popup.contains(document.activeElement)).toBe(true));
+    fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
+    await waitFor(() => expect(trigger.getAttribute('aria-expanded')).toBe('false'));
+    await waitFor(() => expect(document.activeElement).toBe(trigger));
+  }
+});
+
+test('dialogs launched from action popups restore the visible toolbar trigger', async () => {
+  render(<Workbench />);
+  for (const [group, action, title] of [
+    ['Workspace', 'Preferences', 'Preferences'],
+    ['Workspace', 'Transfer between devices', 'Transfer between devices'],
+    ['Prompt actions', 'Edit template', 'Edit template'],
+    ['Prompt actions', 'Share', 'Share prompt'],
+  ]) {
+    const trigger = screen.getByRole('button', { name: group });
+    if (trigger.getAttribute('aria-expanded') !== 'true') fireEvent.click(trigger);
+    fireEvent.click(await screen.findByRole('button', { name: action }));
+    const dialog = await screen.findByRole('dialog', { name: title });
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    await waitFor(() => expect(document.activeElement).toBe(trigger));
+  }
+});
+
+test('transfer invitations open their dialog while workspace controls stay collapsed', async () => {
+  window.history.replaceState(null, '', '#transfer=tcSyntheticInitial');
+  render(<Workbench />);
+  expect((await screen.findByLabelText<HTMLInputElement>('Receiver invitation link or address')).value).toBe('tcSyntheticInitial');
+  expect(screen.getByRole('button', { name: 'Workspace', hidden: true }).getAttribute('aria-expanded')).toBe('false');
+  expect(window.location.hash).toBe('');
+  fireEvent.click(screen.getByText('Close', { selector: 'button' }));
+  await act(async () => {
+    window.history.replaceState(null, '', '#transfer=tcSyntheticLater');
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+  });
+  expect((await screen.findByLabelText<HTMLInputElement>('Receiver invitation link or address')).value).toBe('tcSyntheticLater');
+  expect(screen.getByRole('button', { name: 'Workspace', hidden: true }).getAttribute('aria-expanded')).toBe('false');
+  expect(window.location.hash).toBe('');
+  expect(sendTransfer).not.toHaveBeenCalled();
+  expect(receiveTransfer).not.toHaveBeenCalled();
 });
