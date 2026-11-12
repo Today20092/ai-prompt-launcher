@@ -19,6 +19,7 @@ import { chatApps, type AppName } from '@/lib/chat-apps';
 import { cn } from '@/lib/utils';
 import { t3Handoff, type T3Options } from '@/lib/t3';
 import BackupControls from '@/components/BackupControls';
+import DeviceTransfer from '@/components/DeviceTransfer';
 import { templateLabel } from '@/lib/backup';
 import ShareControls from '@/components/ShareControls';
 import { readShareLink, saveReceivedCopy, shareRecovery, type ShareSnapshot } from '@/lib/sharing';
@@ -235,6 +236,7 @@ export default function Workbench() {
     <header className="app-header">
       <a href="#workspace" className="brand"><Sparkles aria-hidden="true" />Promptroom</a>
       <div className="header-actions">
+        <DeviceTransfer workspace={workspace} store={store.current} onImported={next => { setWorkspace(next); setSavingStatus(''); }} />
         <Tip label="Preferences"><Button variant="ghost" size="icon" disabled={!ready} aria-label="Preferences" onClick={event => { opener.current = event.currentTarget; setPreferencesOpen(true); }}><Settings2 /></Button></Tip>
         <Button variant="outline" disabled={!ready} onClick={event => openEditor(event, true)}><Plus data-icon="inline-start" />New prompt</Button>
       </div>

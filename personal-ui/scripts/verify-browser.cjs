@@ -62,7 +62,7 @@ const output = process.env.BROWSER_EVIDENCE_DIR || '.scratch/browser-evidence';
         await page.getByText('View link and snapshot data', { exact: true }).click();
         let snapshot = JSON.parse(await page.getByLabel('Exact snapshot data').inputValue());
         assert.equal(snapshot.values, undefined);
-        await page.getByLabel('Include text', { exact: true }).check();
+        await page.getByRole('checkbox', { name: 'Include text', exact: true }).check();
         snapshot = JSON.parse(await page.getByLabel('Exact snapshot data').inputValue());
         assert.equal(snapshot.values.text, temporary);
         const link = await page.getByLabel('Link to copy or share').inputValue();
