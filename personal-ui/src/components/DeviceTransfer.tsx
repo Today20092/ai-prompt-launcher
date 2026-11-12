@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import { ArrowLeftRight } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -10,10 +10,10 @@ import { beginClipboard, clipboardBrowser, LatestOperation } from '@/lib/browser
 import { receiveTransfer, sendTransfer, transferInvitationLink, parseTransferAddress, watchTransferInvitation } from '@/lib/device-transfer';
 import type { Workspace, WorkspaceStore } from '@/lib/workspace';
 
-type Props = { workspace: Workspace; store: WorkspaceStore | null; onImported: (workspace: Workspace) => void };
+type Props = { finalFocus?: RefObject<HTMLButtonElement | null>; workspace: Workspace; store: WorkspaceStore | null; onImported: (workspace: Workspace) => void };
 type Review = { base: Workspace; plan: ImportPlan; complete: () => void };
 
-export default function DeviceTransfer({ workspace, store, onImported }: Props) {
+export default function DeviceTransfer({ workspace, store, onImported, finalFocus }: Props) {
   const [open, setOpen] = useState(false);
   const [address, setAddress] = useState('');
   const [invitation, setInvitation] = useState('');
@@ -120,7 +120,7 @@ export default function DeviceTransfer({ workspace, store, onImported }: Props) 
 
   return <Dialog open={open} onOpenChange={changeOpen}>
     <DialogTrigger render={<Button variant="outline" aria-label="Transfer between devices" />}><ArrowLeftRight data-icon="inline-start" />Transfer</DialogTrigger>
-    <DialogContent>
+    <DialogContent finalFocus={finalFocus}>
       <DialogHeader><DialogTitle>Transfer between devices</DialogTitle><DialogDescription>Copy your saved library once, without an account. Both devices must stay open. Pasted input is excluded.</DialogDescription></DialogHeader>
       <DialogPanel className="flex flex-col gap-4">
         <p className="muted">Encrypted transfers use tailcat’s free, rate-limited relays. The receiving device reviews the merge; existing prompts and app preferences are kept. For libraries over 4 MiB, use a JSON backup.</p>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import { Share2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -14,9 +14,9 @@ import { beginClipboard, beginDeviceShare, clipboardBrowser, sharingBrowser, dow
 import { runBoundarySync } from '@/lib/boundary';
 import { renderPrompt, type PromptTemplate } from '@/lib/prompt';
 
-type Props = { template: PromptTemplate; values: Record<string, string>; onReceived: (snapshot: ShareSnapshot) => void };
+type Props = { finalFocus?: RefObject<HTMLButtonElement | null>; template: PromptTemplate; values: Record<string, string>; onReceived: (snapshot: ShareSnapshot) => void };
 
-export default function ShareControls({ template, values, onReceived }: Props) {
+export default function ShareControls({ template, values, onReceived, finalFocus }: Props) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [status, setStatus] = useState('');
@@ -72,7 +72,7 @@ export default function ShareControls({ template, values, onReceived }: Props) {
 
   return <Dialog open={open} onOpenChange={changeOpen}>
     <DialogTrigger render={<Button variant="ghost" className="share-trigger" />}><Share2 data-icon="inline-start" />Share</DialogTrigger>
-    <DialogContent>
+    <DialogContent finalFocus={finalFocus}>
       <DialogHeader><DialogTitle>Share prompt</DialogTitle><DialogDescription>Send a reusable template. Include filled values only if you choose them below.</DialogDescription></DialogHeader>
       <DialogPanel className="share-dialog">
       <Fieldset className="max-w-none gap-3"><FieldsetLegend>Link content</FieldsetLegend>
