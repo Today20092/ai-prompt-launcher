@@ -160,6 +160,26 @@
 .preview [data-panel-open] > span:first-child::before { content: '− '; }
 .preview pre { white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; font-family: inherit; font-size: .875rem; line-height: 1.75; padding: 1.25rem; border-top: 1px solid var(--border); user-select: text; }
 .template-dialog textarea { max-height: 18rem; overflow-y: auto; }
+.template-dialog [data-slot="dialog-header"] { padding-right: 3.5rem; }
+@media (min-width: 640px) {
+  [data-slot="dialog-viewport"]:has(.template-dialog[data-expanded]) { grid-template-rows: minmax(0, 1fr); }
+  .template-dialog[data-expanded] { grid-row-start: 1; height: 100%; max-width: 80rem; }
+  .template-dialog[data-expanded] form { flex: 1; }
+  .template-dialog[data-expanded] [data-slot="scroll-area-viewport"] > div { height: 100%; }
+  .template-dialog[data-expanded] .template-editor-panel { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto minmax(16rem, 1fr) auto; height: 100%; }
+  .template-dialog[data-expanded] .template-body-field, .template-dialog[data-expanded] .editor-note { grid-column: 1 / -1; }
+  .template-dialog[data-expanded] .template-body-field { min-height: 0; }
+  .template-dialog[data-expanded] [data-slot="textarea-control"] { flex: 1; min-height: 8rem; }
+  .template-dialog[data-expanded] textarea { field-sizing: fixed; height: 100%; max-height: none; resize: none; }
+}
+.template-dialog [data-slot="dialog-footer"] { flex-shrink: 0; }
+@media (max-width: 639px) {
+  [data-slot="dialog-viewport"]:has(.template-dialog) { grid-template-rows: minmax(0, 1fr); padding: 0; }
+  .template-dialog { grid-row-start: 1; height: 100%; max-width: none; }
+  .template-dialog form { flex: 1; }
+  .template-dialog textarea { field-sizing: fixed; height: 35dvh; min-height: 12rem; max-height: none; }
+  .template-dialog .template-expand { display: none; }
+}
 .share-dialog {
   display: flex;
   flex-direction: column;

@@ -157,3 +157,26 @@ test('template editor shows validation, then saves through the form', async () =
   // Select triggers stay named by their field labels and show labels rather than raw values.
   expect(screen.getByRole('combobox', { name: 'Chat app' }).textContent).toContain('(preferred)');
 });
+
+test('expanding the template editor keeps the same draft, selection and scroll position', async () => {
+  render(<Workbench />);
+  fireEvent.click(await screen.findByRole('button', { name: 'New prompt' }));
+  fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Synthetic long template' } });
+  const body = screen.getByLabelText<HTMLTextAreaElement>('Template');
+  const text = 'Synthetic paragraph with {{text}}.\n'.repeat(100);
+  fireEvent.change(body, { target: { value: text } });
+  body.setSelectionRange(20, 30);
+  body.scrollTop = 100;
+  fireEvent.click(screen.getByRole('button', { name: 'Expand editor' }));
+  expect(screen.getByLabelText('Template')).toBe(body);
+  expect(body.value).toBe(text);
+  expect([body.selectionStart, body.selectionEnd, body.scrollTop]).toEqual([20, 30, 100]);
+  expect(screen.getByRole('button', { name: 'Collapse editor' }).getAttribute('aria-expanded')).toBe('true');
+  fireEvent.click(screen.getByRole('button', { name: 'Collapse editor' }));
+  expect(body.value).toBe(text);
+  fireEvent.click(screen.getByRole('button', { name: 'Save template' }));
+  await screen.findByRole('heading', { name: 'Synthetic long template' });
+  fireEvent.click(screen.getByRole('button', { name: 'Edit template' }));
+  expect(screen.getByLabelText<HTMLTextAreaElement>('Template').value).toBe(text);
+  expect(screen.getByRole('button', { name: 'Expand editor' }).getAttribute('aria-expanded')).toBe('false');
+});

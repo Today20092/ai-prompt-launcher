@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type MouseEvent, type ReactElement } from 'react';
 import { flushSync } from 'react-dom';
-import { ArrowUpRight, Copy, Moon, Pencil, Plus, Settings2, Sparkles, Star, Sun } from 'lucide-react';
+import { ArrowUpRight, Copy, Maximize2, Minimize2, Moon, Pencil, Plus, Settings2, Sparkles, Star, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertAction, AlertDescription } from '@/components/ui/alert';
 import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -62,6 +62,8 @@ export default function Workbench() {
   const [busy, setBusy] = useState(false);
   const [manualCopy, setManualCopy] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [editorExpanded, setEditorExpanded] = useState(false);
+  const templateBody = useRef<HTMLTextAreaElement | null>(null);
   const [preferencesOpen, setPreferencesOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [draft, setDraft] = useState({ title: '', description: '', body: '' });
@@ -150,7 +152,15 @@ export default function Workbench() {
     setCreating(isNew);
     setDraft(isNew ? { title: '', description: '', body: 'Help me with the following:\n\n{{text}}' } : template);
     setSaveAttempted(false);
+    setEditorExpanded(false);
     setEditing(true);
+  }
+
+  function toggleEditorSize() {
+    const body = templateBody.current;
+    const scrollTop = body?.scrollTop ?? 0;
+    flushSync(() => setEditorExpanded(expanded => !expanded));
+    if (body) body.scrollTop = scrollTop;
   }
 
   function saveTemplate(event: React.SubmitEvent<HTMLFormElement>) {
@@ -306,12 +316,12 @@ export default function Workbench() {
       </section>
     </main>
     <Dialog open={editing} onOpenChange={setEditing}>
-      <DialogContent className="template-dialog" finalFocus={opener}>
+      <DialogContent className="template-dialog" data-expanded={editorExpanded || undefined} finalFocus={opener}>
         <DialogHeader><DialogTitle>{creating ? 'New reusable prompt' : 'Edit template'}</DialogTitle>
           <DialogDescription>Use {'{{text}}'} for a variable. Each named variable becomes a required multiline field.</DialogDescription>
         </DialogHeader>
         <Form onSubmit={saveTemplate} className="min-h-0 gap-0">
-          <DialogPanel className="flex flex-col gap-4">
+          <DialogPanel className="template-editor-panel flex flex-col gap-4" scrollFade={!editorExpanded}>
             <Field invalid={saveAttempted && !draft.title.trim()}><FieldLabel htmlFor="template-title">Name</FieldLabel>
               <Input id="template-title" value={draft.title} aria-required="true" aria-invalid={saveAttempted && !draft.title.trim()} aria-describedby={saveAttempted && !draft.title.trim() ? 'title-error' : undefined} onChange={event => setDraft(old => ({ ...old, title: event.target.value }))} />
               {saveAttempted && !draft.title.trim() && <FieldError match id="title-error">Give your prompt a name.</FieldError>}
@@ -319,8 +329,13 @@ export default function Workbench() {
             <Field><FieldLabel htmlFor="template-description">Description <span className="muted">optional</span></FieldLabel>
               <Input id="template-description" value={draft.description} onChange={event => setDraft(old => ({ ...old, description: event.target.value }))} />
             </Field>
-            <Field invalid={saveAttempted && !draft.body.trim()}><FieldLabel htmlFor="template-body">Template</FieldLabel>
-              <Textarea id="template-body" rows={7} value={draft.body} aria-required="true" aria-invalid={saveAttempted && !draft.body.trim()} aria-describedby={saveAttempted && !draft.body.trim() ? 'variable-guide body-error' : 'variable-guide'} onChange={event => setDraft(old => ({ ...old, body: event.target.value }))} />
+            <Field className="template-body-field" invalid={saveAttempted && !draft.body.trim()}>
+              <div className="flex w-full items-center justify-between gap-2"><FieldLabel htmlFor="template-body">Template</FieldLabel>
+                <Button className="template-expand" type="button" variant="ghost" size="sm" aria-expanded={editorExpanded} aria-controls="template-body" onClick={toggleEditorSize}>
+                  {editorExpanded ? <Minimize2 data-icon="inline-start" /> : <Maximize2 data-icon="inline-start" />}{editorExpanded ? 'Collapse editor' : 'Expand editor'}
+                </Button>
+              </div>
+              <Textarea ref={templateBody} id="template-body" rows={7} value={draft.body} aria-required="true" aria-invalid={saveAttempted && !draft.body.trim()} aria-describedby={saveAttempted && !draft.body.trim() ? 'variable-guide body-error' : 'variable-guide'} onChange={event => setDraft(old => ({ ...old, body: event.target.value }))} />
               <FieldDescription id="variable-guide">Names use letters, digits, underscores or hyphens and start with a letter or underscore. Example: {'{{source_text}}'}. Repeated names share one field.</FieldDescription>
               {saveAttempted && !draft.body.trim() && <FieldError match id="body-error">Enter a template.</FieldError>}
               <FieldDescription>{draftVariables.length ? `Fields: ${draftVariables.join(', ')}.` : 'No variables. The template will be copied as written.'}</FieldDescription>
