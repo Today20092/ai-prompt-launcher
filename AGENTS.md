@@ -44,12 +44,12 @@ No lint or format command exists. Match the surrounding code.
 
 ## Git
 
-For branch setup, integration, promotion or cleanup, read [the Git workflow](docs/branch-workflow.md).
+For branches, worktrees, pull requests or merging, read [the Git workflow](docs/branch-workflow.md). End every code task with a commit and a pull request to `main`.
 
 - CI does not run on pull requests, so run the checks above yourself and report the results.
 - Every push or merge to `main` deploys the public site. Do not push to `main` without explicit approval.
 - Commit messages use Conventional Commits, such as `fix: ...` or `feat(ui): ...`.
-- More than one session may share a checkout. Confirm the current branch immediately before committing.
+- Work in a host-managed worktree, not the shared main checkout, and commit work in progress instead of stashing.
 
 ## Boundaries
 

@@ -1,23 +1,19 @@
 # Git workflow
 
-`main` is reviewed release source and the GitHub default branch. `development` combines selected concurrent work for a development preview. Individual changes use temporary scoped branches or worktrees.
+`main` is the only long-lived branch: reviewed release source and the GitHub default. Each task gets its own branch and pull request into `main`; there is no integration branch and no stacked PRs.
 
-## Choose a route
+## Work on a task
 
-| Work | Start from | Route |
-| --- | --- | --- |
-| One independent feature or fix | current `main` | Scoped branch, then a PR to `main`. It does not need to pass through `development`. |
-| Several features to preview together | current `main`, or `development` if the work depends on the batch | Scoped branches, integrated into `development`, then one `development` to `main` PR. |
-| Sequential work in the current batch | `development` | May commit directly to `development`. |
-| External contribution | matches its route | PR to `development` for a batch, or to `main` for an independent release. Reviewed and checked the same way. |
+1. Work in a worktree the host manages, based on current `origin/main`. A T3 Code thread on the main checkout moves itself with `t3_worktree_handoff` before editing; the project's worktree script runs `pnpm install --frozen-lockfile`. Without host worktree tools, use `git worktree add`. Agent branches use `codex/<scope>`; `feat/`, `fix/` and `chore/` prefixes are also in use.
+2. Commit work in progress instead of using `git stash`: stashes are shared by every worktree.
+3. Make the change and run the checks below.
+4. End every code task with a commit and a pull request to `main`, without being asked. Opening a PR is safe; only a merge deploys.
+5. **CI does not run on pull requests.** Report the check results in the PR.
+6. Merge only when the user asks, with a **merge commit** (other methods are enabled on GitHub, so choose it explicitly).
 
-Use `codex/<scope>` for agent branches. Type prefixes such as `feat/`, `fix/` and `chore/` are also in use. A branch cut from `development` can carry unfinished work, so check that any PR to `main` contains only what you intend to release.
+Fetch before choosing a base. Use `git pull --ff-only` to advance a local `main`; inspect divergent histories and merge deliberately. Never force-push `main`.
 
-Keep the primary checkout and existing worktrees intact. A later revision of a feature is not in the preview until it is integrated into `development` again.
-
-## Check before integrating or opening a PR
-
-**CI does not run on pull requests or on `development`.** Run these yourself and report the results in the PR. Confirm a combined batch on `development`, and a direct release against current `main`.
+## Checks
 
 ```bash
 for file in js/*.js; do node --check "$file"; done
@@ -43,27 +39,19 @@ pnpm exec astro preview stop
 
 Both use local port 4329 and only one can run at a time. Tailscale Serve already maps HTTPS port 8449 to it. See [the workbench README](../personal-ui/README.md#review).
 
-## Synchronize and promote
-
-- Run `git fetch origin` before deciding how to synchronize. Advance with `git pull --ff-only`. If histories diverge, inspect the commits and integrate deliberately. Never discard local work or force-push to resolve a failed fast-forward.
-- Pushing a branch is a backup. It is not evidence that the change was tested or released.
-- Promote a batch through a `development` to `main` PR and merge it with a **merge commit**, which keeps ancestry. Other merge methods are enabled on GitHub, so choose this one explicitly.
-- Record the source revision and check results in the PR.
-- Bring independently shipped features and main-only fixes back into `development` with a merge before starting the next batch.
-
 ## What triggers a release
 
 | Action | Effect |
 | --- | --- |
-| Push or merge to `development` or a scoped branch | Nothing runs |
+| Push to a task branch | Nothing runs |
 | Open or update a pull request | Nothing runs |
 | Push or merge to `main` | Runs checks, then **deploys to the public GitHub Pages site** |
 | Manual `workflow_dispatch` of Pages | Runs checks and deploys |
 | A commit message containing `[skip ci]` on `main` | GitHub skips the workflow, so nothing deploys |
 | Version tag | Nothing runs |
 
-`main` has no branch protection, so a direct push deploys immediately. Treat every push to `main` as a release, and do not push there without explicit approval.
+`main` has no branch protection, because no check runs on pull requests, so a direct push deploys immediately. Treat every push to `main` as a release, and do not push there without explicit approval. The `development` branch was retired on 2026-11-21 with no commits that `main` lacked.
 
 ## Clean up
 
-Remove a temporary branch or worktree only after its changes are integrated. First check for uncommitted files, unmerged commits and ignored files you still need. Keep `main` and `development`. Deleting remote branches or rewriting history requires explicit approval.
+GitHub deletes a merged PR's branch. Remove the task's worktree through the host (or `git worktree remove`) once it has no uncommitted or unmerged work.
