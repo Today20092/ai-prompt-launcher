@@ -37,11 +37,11 @@ const reviewLink = url.href;
 
 ## JSON file fallback
 
-Return the snapshot as a UTF-8 `.json` file up to 256 KiB. The user opens it via **Prompt actions → Share → Open single-prompt JSON**. If file delivery is unavailable or the file is too large, return the title, description, and body for the user to paste into **New prompt**.
+Return the snapshot as a UTF-8 `.json` file up to 256 KiB. The user opens it via **Prompt actions → Share → Transfer a template file → Open single-prompt JSON**. If file delivery is unavailable or the file is too large, return the title, description, and body for the user to paste into **New prompt**.
 
 ## Revise a saved template
 
-Ask the user to select the template, choose **Prompt actions → Share → Download template JSON**, and give you the file. Update its template fields, then follow **Create a template link** to return the revision. **Save a copy** adds a separate template for the revision.
+Ask the user to select the template, choose **Prompt actions → Share → Transfer a template file → Download template JSON**, and give you the file. Update its template fields, then follow **Create a template link** to return the revision. **Save a copy** adds a separate template for the revision.
 
 ## Transfer a workspace
 

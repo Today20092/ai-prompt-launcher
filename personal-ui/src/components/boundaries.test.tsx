@@ -5,7 +5,7 @@ import BackupControls from './BackupControls';
 import ShareControls from './ShareControls';
 import Workbench from './Workbench';
 import { exportBackup } from '../lib/backup';
-import { createSnapshot } from '../lib/sharing';
+import { createSnapshot, readSnapshot } from '../lib/sharing';
 import { newWorkspace, WorkspaceStore, WORKSPACE_KEY } from '../lib/workspace';
 import { receiveTransfer, sendTransfer } from '../lib/device-transfer';
 
@@ -146,6 +146,46 @@ test('selecting an invalid file supersedes copying and leaves copy actions usabl
   expect((screen.getByRole('button', { name: 'Copy template' }) as HTMLButtonElement).disabled).toBe(false);
   await act(async () => pending.resolve());
   expect(screen.queryByText('Unfilled template copied.')).toBeNull();
+});
+
+test('template JSON can be exported, revised, reviewed, and explicitly saved', async () => {
+  const workspace = newWorkspace();
+  const original = workspace.templates.find(item => item.id === workspace.lastUsedPrompt)!;
+  localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+  let downloaded: Blob | undefined;
+  vi.stubGlobal('URL', class extends URL {
+    static createObjectURL(blob: Blob) { downloaded = blob; return 'blob:template'; }
+    static revokeObjectURL() {}
+  });
+  const download = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+  const view = render(<Workbench />);
+  fireEvent.change(await screen.findByLabelText('Your text'), { target: { value: 'Synthetic temporary text' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Prompt actions' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Share$/ }));
+  fireEvent.click(screen.getByRole('button', { name: 'Transfer a template file' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Download template JSON' }));
+  expect(download).toHaveBeenCalledOnce();
+  const reader = new FileReader();
+  const raw = await new Promise<string>((resolve, reject) => {
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsText(downloaded!);
+  });
+  const revised = readSnapshot(raw);
+  expect(revised).toEqual(createSnapshot(original, {}));
+  revised.template.title = 'Synthetic revised template';
+  choose('Open single-prompt JSON', Promise.resolve(JSON.stringify(revised)));
+  await screen.findByRole('heading', { name: 'Synthetic revised template' });
+  expect(localStorage.getItem(WORKSPACE_KEY)).toBe(JSON.stringify(workspace));
+  fireEvent.click(screen.getByRole('button', { name: 'Save a copy' }));
+  await screen.findByText(/Independent template copy saved/);
+  const saved = JSON.parse(localStorage.getItem(WORKSPACE_KEY)!);
+  expect(saved.templates.slice(0, -1)).toEqual(workspace.templates);
+  expect(saved.templates.at(-1)).toEqual({ ...revised.template, id: expect.any(String) });
+  expect(saved.templates.at(-1).id).not.toBe(original.id);
+  view.unmount();
+  render(<Workbench />);
+  await screen.findByRole('button', { name: /Synthetic revised template/ });
 });
 
 test('template editor shows validation, then saves through the form', async () => {
