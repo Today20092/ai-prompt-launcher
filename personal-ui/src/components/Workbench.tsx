@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react';
 import { flushSync } from 'react-dom';
 import { ArrowUpRight, ChevronDown, Copy, Maximize2, Minimize2, Moon, MoreHorizontal, Pencil, Plus, Settings2, Sparkles, Star, Sun } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Alert, AlertAction, AlertDescription } from '@/components/ui/alert';
 import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogPanel, DialogTitle } from '@/components/ui/dialog';
@@ -246,6 +246,7 @@ export default function Workbench() {
             <PopoverTitle className="sr-only">Workspace actions</PopoverTitle><div className="tools-actions">
             <DeviceTransfer finalFocus={workspaceTrigger} workspace={workspace} store={store.current} onImported={next => { setWorkspace(next); setSavingStatus(''); }} />
             <Button variant="ghost" disabled={!ready} onClick={() => { opener.current = workspaceTrigger.current; setPreferencesOpen(true); }}><Settings2 />Preferences</Button>
+            <a className={buttonVariants({ variant: 'ghost' })} href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/llms.txt`} target="_blank" rel="noopener"><ArrowUpRight aria-hidden="true" />AI template guide</a>
           </div></PopoverPopup>
         </Popover></div>
         <Button variant="outline" aria-label="New prompt" disabled={!ready} onClick={event => openEditor(event, true)}><Plus data-icon="inline-start" /><span className="new-prompt-label">New prompt</span></Button>
