@@ -1,0 +1,43 @@
+# Promptroom
+
+> Create, fill, and reuse prompt templates in your browser.
+
+## Ask an AI to make a template
+
+Give your AI this guide and a worked example, chat, or set of instructions. For example:
+
+> Turn the attached chat into a reusable Promptroom template. Keep my channel's standing instructions and links in the template. Make the transcript a variable. Return a Promptroom review link using this guide.
+
+## Instructions for agents
+
+Keep recurring rules, tone, channel links, and visual style in the template body. Use `{{name}}` for inputs that change between uses, such as `{{transcript}}` or `{{episode_topic}}`. Names start with a letter or underscore and may contain letters, digits, underscores, or hyphens. Every distinct variable is required when running the prompt, so use variables only for inputs the user needs to supply each time.
+
+For a thumbnail template, keep the channel's composition and typography rules in the body and make the episode subject or reference a field. For a description template, keep the channel's voice and call to action in the body and make the transcript a field. Use separate templates when the instructions differ by channel.
+
+Create a JSON object with this exact shape. The title and body must be nonblank. Use an empty string for an optional description. Omit completed input values and source chats from the link.
+
+```json
+{
+  "format": "promptroom-share",
+  "version": 1,
+  "template": {
+    "title": "Garden channel video description",
+    "description": "Draft a description for a gardening episode.",
+    "body": "Write a friendly YouTube description for Garden Notes. Lead with the practical takeaway. Use only facts supported by the transcript. End with an invitation to subscribe. Return only the description.\n\nTranscript:\n{{transcript}}"
+  }
+}
+```
+
+Use the Promptroom homepage URL on the same deployment as this guide. Remove any query and fragment, then append `#share=` followed by the percent-encoded JSON. Use JavaScript or another URL encoding tool to generate the link and preserve line breaks and special characters.
+
+```js
+const url = new URL("./", guideUrl);
+url.hash = "share=" + encodeURIComponent(JSON.stringify(snapshot));
+const reviewLink = url.href;
+```
+
+Return the link to the user. It opens a temporary template where they can preview it, edit it from **Prompt actions**, and choose **Save a copy** to keep it in this browser.
+
+If the full URL exceeds 8,000 characters or you cannot reliably encode it, provide the same object as a UTF-8 `.json` file, up to 256 KiB. Open it from **Prompt actions → Share → Open single-prompt JSON**, then choose **Save a copy**. The user can also paste the title, description, and body into **New prompt**.
+
+The fragment stays in the browser during navigation, but anyone with the link can read its contents. Leave secrets and private inputs out of links.

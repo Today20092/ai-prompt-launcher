@@ -1,8 +1,24 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { createSnapshot, shareLink, readShareLink, readSnapshot, exportPrompt, saveReceivedCopy, SHARE_FILE_LIMIT } from './sharing';
 import { newWorkspace, WorkspaceStore, WORKSPACE_KEY } from './workspace';
 
 describe('share snapshots', () => {
+  it('opens the public agent example from a project-site link as a reusable template', () => {
+    const guide = readFileSync(new URL('../../public/llms.txt', import.meta.url), 'utf8');
+    const raw = guide.match(/```json\r?\n([\s\S]+?)\r?\n```/)?.[1] ?? '';
+    const snapshot = readSnapshot(raw);
+    const url = new URL('./', 'https://example.com/promptroom/llms.txt');
+    url.hash = 'share=' + encodeURIComponent(JSON.stringify(snapshot));
+    const received = readShareLink(url.href);
+    expect(received).toEqual(snapshot);
+    expect(received?.template.body).toContain('{{transcript}}');
+    expect(received?.values).toBeUndefined();
+    expect(url.pathname).toBe('/promptroom/');
+    const { copy } = saveReceivedCopy(newWorkspace(), { ...snapshot.template, id: 'temporary' });
+    expect(copy).toEqual({ ...snapshot.template, id: copy.id });
+  });
+
   it('excludes current input and unrelated template settings by default', () => {
     const template = { id: 'private-id', title: 'Name', description: 'Description', body: 'Read {{text}}', chatApp: 'T3 Chat' as const };
     const snapshot = createSnapshot(template, { text: 'PRIVATE' });
