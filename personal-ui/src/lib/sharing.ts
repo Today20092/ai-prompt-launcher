@@ -48,6 +48,19 @@ export function readShareLink(link: string): ShareSnapshot | null {
   return readSnapshot(raw);
 }
 
+export function watchShareLinks(receive: (snapshot: ShareSnapshot | null) => void): () => void {
+  function consume() {
+    let snapshot: ShareSnapshot | null;
+    try { snapshot = readShareLink(window.location.href); }
+    catch { receive(null); return; }
+    if (snapshot) receive(snapshot);
+  }
+
+  consume();
+  window.addEventListener('hashchange', consume);
+  return () => window.removeEventListener('hashchange', consume);
+}
+
 export function exportPrompt(template: PromptTemplate): string {
   const raw = JSON.stringify(createSnapshot(template, {}), null, 2);
   readSnapshot(raw);

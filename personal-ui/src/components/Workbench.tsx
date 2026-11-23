@@ -22,7 +22,7 @@ import BackupControls from '@/components/BackupControls';
 import DeviceTransfer from '@/components/DeviceTransfer';
 import { templateLabel } from '@/lib/backup';
 import ShareControls from '@/components/ShareControls';
-import { readShareLink, saveReceivedCopy, shareRecovery, type ShareSnapshot } from '@/lib/sharing';
+import { saveReceivedCopy, shareRecovery, watchShareLinks, type ShareSnapshot } from '@/lib/sharing';
 
 import { beginClipboard, beginProviderLaunch, clipboardBrowser, providerBrowser, LatestOperation } from '@/lib/browser';
 
@@ -101,18 +101,20 @@ export default function Workbench() {
     store.current = storage;
     setWorkspace(restored);
     setSavingStatus(storage.message);
-    try {
-      const incoming = readShareLink(window.location.href);
-      if (incoming) receive(incoming);
-    } catch { setReceivedStatus(shareRecovery); }
+    const stopWatching = watchShareLinks(receive);
     setReady(true);
+    return stopWatching;
   }, []);
 
-  function receive(snapshot: ShareSnapshot) {
-    const temporary = { ...snapshot.template, id: crypto.randomUUID() };
+  function receive(snapshot: ShareSnapshot | null) {
+    const temporary = snapshot && { ...snapshot.template, id: crypto.randomUUID() };
     setReceived(temporary);
-    setInputs(old => ({ ...old, [temporary.id]: snapshot.values ?? {} }));
-    setReceivedStatus('Received prompt. Edits and included values are temporary. Save a copy explicitly to keep the reusable template.');
+    setEditing(false);
+    if (temporary && snapshot?.values) {
+      const values = snapshot.values;
+      setInputs(old => ({ ...old, [temporary.id]: values }));
+    }
+    setReceivedStatus(snapshot ? 'Received prompt. Edits and included values are temporary. Save a copy explicitly to keep the reusable template.' : shareRecovery);
     setAttempted(false); setStatus(''); setManualCopy(false);
   }
 
