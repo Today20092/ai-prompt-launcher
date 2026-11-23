@@ -1,6 +1,6 @@
 # Promptroom
 
-> Create, fill, and reuse prompt templates in your browser.
+> Create a template from a chat or example, then open it in Promptroom for review and saving.
 
 ## Ask an AI to make a template
 
@@ -8,13 +8,14 @@ Give your AI this guide and a worked example, chat, or set of instructions. For 
 
 > Turn the attached chat into a reusable Promptroom template. Keep my channel's standing instructions and links in the template. Make the transcript a variable. Return a Promptroom review link using this guide.
 
-## Instructions for agents
+## Create a template link
 
-Keep recurring rules, tone, channel links, and visual style in the template body. Use `{{name}}` for inputs that change between uses, such as `{{transcript}}` or `{{episode_topic}}`. Names start with a letter or underscore and may contain letters, digits, underscores, or hyphens. Every distinct variable is required when running the prompt, so use variables only for inputs the user needs to supply each time.
+1. **Draft.** Put recurring rules, tone, channel links, and visual style in the body. Use `{{name}}` only for inputs the user needs to supply on every run. For a description, use `{{transcript}}`. For a thumbnail, use `{{episode_brief}}`. Create separate templates for channels with different standing instructions. Check that each variable name matches `[A-Za-z_][A-Za-z0-9_-]*`.
+2. **Package.** Create a snapshot using the shape below. Check that the title and body are nonblank. Use an empty string if the description is optional. Include only the reusable instructions and placeholders. Keep source chats, completed inputs, and secrets out of the snapshot because anyone with the link can read it.
+3. **Encode.** Use the guide's absolute URL and the snapshot in the JavaScript below. Check that the complete URL is at most 8,000 characters and that decoding the part after `#share=` yields the original JSON. If the link is too long or you cannot verify the encoding, use the JSON file fallback.
+4. **Deliver.** Return the review link or JSON file. Tell the user to review the temporary template and choose **Save a copy** to keep it in this browser.
 
-For a thumbnail template, keep the channel's composition and typography rules in the body and make the episode subject or reference a field. For a description template, keep the channel's voice and call to action in the body and make the transcript a field. Use separate templates when the instructions differ by channel.
-
-Create a JSON object with this exact shape. The title and body must be nonblank. Use an empty string for an optional description. Omit completed input values and source chats from the link.
+## Snapshot and encoding
 
 ```json
 {
@@ -28,16 +29,22 @@ Create a JSON object with this exact shape. The title and body must be nonblank.
 }
 ```
 
-Use the Promptroom homepage URL on the same deployment as this guide. Remove any query and fragment, then append `#share=` followed by the percent-encoded JSON. Use JavaScript or another URL encoding tool to generate the link and preserve line breaks and special characters.
-
 ```js
 const url = new URL("./", guideUrl);
 url.hash = "share=" + encodeURIComponent(JSON.stringify(snapshot));
 const reviewLink = url.href;
 ```
 
-Return the link to the user. It opens a temporary template where they can preview it, edit it from **Prompt actions**, and choose **Save a copy** to keep it in this browser.
+## JSON file fallback
 
-If the full URL exceeds 8,000 characters or you cannot reliably encode it, provide the same object as a UTF-8 `.json` file, up to 256 KiB. Open it from **Prompt actions → Share → Open single-prompt JSON**, then choose **Save a copy**. The user can also paste the title, description, and body into **New prompt**.
+Return the snapshot as a UTF-8 `.json` file up to 256 KiB. The user opens it via **Prompt actions → Share → Open single-prompt JSON**. If file delivery is unavailable or the file is too large, return the title, description, and body for the user to paste into **New prompt**.
 
-The fragment stays in the browser during navigation, but anyone with the link can read its contents. Leave secrets and private inputs out of links.
+## Revise a saved template
+
+Ask the user to select the template, choose **Prompt actions → Share → Download template JSON**, and give you the file. Update its template fields, then follow **Create a template link** to return the revision. **Save a copy** adds a separate template for the revision.
+
+## Transfer a workspace
+
+For a full transfer, direct the user to **Workspace → Preferences → Backups**. Choose **Export backup** in the source browser, then **Import backup**, review the merge, and choose **Apply import** in the destination browser. A workspace backup uses a separate format from a single-template snapshot.
+
+Saved templates and preferences live in the user's browser. For agent-assisted editing, use a template or file the user shares. The public site provides the guide and the template review page.
